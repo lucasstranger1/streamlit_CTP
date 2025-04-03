@@ -2,32 +2,29 @@ import streamlit as st
 import requests
 from PIL import Image
 import os
-import json
 
-class PlanNetAPI:
+class PlantNetAPI:
     def __init__(self, api_key):
         self.api_key = api_key
-        # Updated to the correct production API endpoint
-        self.BASE_URL = "https://plantnet.org/api/v2/identify"
+        self.BASE_URL = "https://my-api.plantnet.org/v2/identify"
         
     def identify_plant(self, image_path):
         try:
             with open(image_path, 'rb') as f:
-                # PlantNet API v2 expects these parameters
+                # Correct API parameters
                 params = {
-                    'api-key': self.api_key,
-                    'include-related-images': 'false',
-                    'no-reject': 'false',
-                    'lang': 'en'
+                    'api-key': self.api_key
                 }
                 
-                # Correct format for files (must include plant organ type)
+                # Correct file format with organ type
                 files = [
                     ('images', (os.path.basename(image_path), f, 'image/jpeg'))
                 ]
                 
-                # Add organs parameter (required for v2)
-                data = {'organs': ['auto']}
+                # Required data field
+                data = {
+                    'organs': ['auto']  # Let API detect plant part automatically
+                }
                 
                 response = requests.post(
                     self.BASE_URL,
@@ -36,79 +33,71 @@ class PlanNetAPI:
                     data=data
                 )
                 
-                # For debugging - print the full request
-                print(f"Request URL: {response.request.url}")
-                print(f"Request Headers: {response.request.headers}")
-                print(f"Response Status: {response.status_code}")
-                print(f"Response Body: {response.text}")
+                # For debugging
+                print("API Response:", response.status_code, response.text)
                 
-                response.raise_for_status()
-                data = response.json()
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get('results'):
+                        best_match = data['results'][0]
+                        scientific_name = best_match['species']['scientificNameWithoutAuthor']
+                        common_names = best_match['species'].get('commonNames', [])
+                        common_name = common_names[0] if common_names else 'Unknown'
+                        confidence = round(best_match['score'] * 100, 1)
+                        return f"{scientific_name} ({common_name}) - Confidence: {confidence}%"
+                    return "No plant match found."
+                else:
+                    return f"API Error {response.status_code}: {response.text}"
                 
-                if data.get('results'):
-                    best_match = data['results'][0]
-                    scientific_name = best_match['species']['scientificNameWithoutAuthor']
-                    common_names = best_match['species'].get('commonNames', [])
-                    common_name = common_names[0] if common_names else 'Unknown'
-                    confidence = round(best_match['score'] * 100, 1)
-                    return f"{scientific_name} ({common_name}) - Confidence: {confidence}%"
-                return "No plant match found."
-                
-        except requests.exceptions.HTTPError as e:
-            return f"API Error: {str(e)}"
         except Exception as e:
-            return f"Processing Error: {str(e)}"
+            return f"Error: {str(e)}"
 
 def main():
     st.set_page_config(page_title="Plant Identifier", page_icon="🌿")
     st.title("🌿 Plant Identification App")
-    st.write("Upload an image of a plant to identify its species")
     
-    # Get API key - use st.secrets for production
-    api_key = "2b10X3YLMd8PNAuKOCVPt7MeUe"  # Replace with your actual key
+    # Get API key - replace with your actual key
+    api_key = st.text_input("Enter your PlantNet API Key", "2b10X3YLMd8PNAuKOCVPt7MeUe")
     
-    plantnet = PlanNetAPI(api_key)
+    plantnet = PlantNetAPI(api_key)
     
     uploaded_file = st.file_uploader(
-        "Choose a plant image", 
-        type=["jpg", "jpeg", "png"],
-        accept_multiple_files=False
+        "Upload a clear plant photo (leaves, flowers, or fruits work best)",
+        type=["jpg", "jpeg", "png"]
     )
     
-    if uploaded_file is not None:
+    if uploaded_file and api_key:
         try:
             image = Image.open(uploaded_file)
-            st.image(
-                image, 
-                caption="Uploaded Image", 
-                use_container_width=True
-            )
+            st.image(image, use_container_width=True)
             
-            # Save to temp file with proper extension
-            temp_file = f"temp_plant.{uploaded_file.name.split('.')[-1]}"
+            # Save to temp file
+            temp_file = "temp_plant.jpg"
             with open(temp_file, "wb") as f:
                 f.write(uploaded_file.getvalue())
             
-            with st.spinner("Identifying plant..."):
+            with st.spinner("Analyzing plant..."):
                 result = plantnet.identify_plant(temp_file)
             
-            st.subheader("Identification Result")
+            st.subheader("Results")
             if "Error" in result:
                 st.error(result)
-                st.info("Make sure your image clearly shows leaves, flowers, or fruits")
+                st.info("""
+                Troubleshooting tips:
+                1. Use a clear, close-up photo of leaves/flowers
+                2. Ensure your API key is valid
+                3. Check your internet connection
+                """)
             else:
-                st.success(f"**Identified Plant:** {result}")
-                st.markdown("---")
-                st.write("ℹ️ Tips for better results:")
-                st.markdown("- Take clear, close-up photos of plant parts")
-                st.markdown("- Ensure good lighting and focus")
-                st.markdown("- Avoid images with multiple plants")
+                st.success(result)
                 
         except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+            st.error(f"Error processing image: {e}")
         finally:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
+    elif not api_key:
+        st.warning("Please enter your PlantNet API key")
 
 if __name__ == "__main__":
     main()
