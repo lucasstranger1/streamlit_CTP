@@ -2,16 +2,18 @@ import streamlit as st
 import requests
 from PIL import Image
 import os
+import json
 
 class PlanNetAPI:
     def __init__(self, api_key):
         self.api_key = api_key
-        self.BASE_URL = "https://my-api.plantnet.org/v2/identify"
+        # Updated to the correct production API endpoint
+        self.BASE_URL = "https://plantnet.org/api/v2/identify"
         
     def identify_plant(self, image_path):
         try:
             with open(image_path, 'rb') as f:
-                # PlantNet API expects specific parameters
+                # PlantNet API v2 expects these parameters
                 params = {
                     'api-key': self.api_key,
                     'include-related-images': 'false',
@@ -19,17 +21,28 @@ class PlanNetAPI:
                     'lang': 'en'
                 }
                 
-                # Note the different format for files parameter
-                files = [('images', (os.path.basename(image_path), f, 'image/jpeg'))]
+                # Correct format for files (must include plant organ type)
+                files = [
+                    ('images', (os.path.basename(image_path), f, 'image/jpeg'))
+                ]
                 
-                # Correct endpoint is just '/identify' without '/all'
+                # Add organs parameter (required for v2)
+                data = {'organs': ['auto']}
+                
                 response = requests.post(
                     self.BASE_URL,
                     files=files,
-                    params=params
+                    params=params,
+                    data=data
                 )
-                response.raise_for_status()
                 
+                # For debugging - print the full request
+                print(f"Request URL: {response.request.url}")
+                print(f"Request Headers: {response.request.headers}")
+                print(f"Response Status: {response.status_code}")
+                print(f"Response Body: {response.text}")
+                
+                response.raise_for_status()
                 data = response.json()
                 
                 if data.get('results'):
@@ -37,7 +50,8 @@ class PlanNetAPI:
                     scientific_name = best_match['species']['scientificNameWithoutAuthor']
                     common_names = best_match['species'].get('commonNames', [])
                     common_name = common_names[0] if common_names else 'Unknown'
-                    return f"{scientific_name} ({common_name})"
+                    confidence = round(best_match['score'] * 100, 1)
+                    return f"{scientific_name} ({common_name}) - Confidence: {confidence}%"
                 return "No plant match found."
                 
         except requests.exceptions.HTTPError as e:
@@ -81,12 +95,14 @@ def main():
             st.subheader("Identification Result")
             if "Error" in result:
                 st.error(result)
+                st.info("Make sure your image clearly shows leaves, flowers, or fruits")
             else:
                 st.success(f"**Identified Plant:** {result}")
                 st.markdown("---")
-                st.write("ℹ️ For more accurate results:")
-                st.markdown("- Take clear photos of leaves, flowers, or fruits")
-                st.markdown("- Avoid blurry or distant shots")
+                st.write("ℹ️ Tips for better results:")
+                st.markdown("- Take clear, close-up photos of plant parts")
+                st.markdown("- Ensure good lighting and focus")
+                st.markdown("- Avoid images with multiple plants")
                 
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
