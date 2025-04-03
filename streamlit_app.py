@@ -1,5 +1,5 @@
 import streamlit as st
-from plannet_api import PlanNetAPI
+from plantnet_api import PlanNetAPI
 from PIL import Image
 import os
 
@@ -41,7 +41,7 @@ if uploaded_file is not None:
     else:
         st.success(f"Identified Plant: {result}")
 import streamlit as st
-from plannet_api import PlanNetAPI
+from plantnet_api import PlanNetAPI
 from PIL import Image
 import os
 
