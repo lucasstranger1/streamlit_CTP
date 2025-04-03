@@ -44,7 +44,7 @@ def main():
     st.write("Upload an image of a plant to identify its species")
     
     # Get API key (you can hardcode this if preferred)
-    api_key = st.secrets.get("PLANTNET_API_KEY", "your-api-key-here")
+    api_key = st.secrets.get("PLANTNET_API_KEY", "2b10X3YLMd8PNAuKOCVPt7MeUe")
     
     # Initialize API
     plantnet = PlanNetAPI(api_key)
