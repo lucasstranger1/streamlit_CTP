@@ -6,22 +6,23 @@ import os
 class PlantNetAPI:
     def __init__(self, api_key):
         self.api_key = api_key
-        self.BASE_URL = "https://my-api.plantnet.org/v2/identify"
+        # Updated to the current correct endpoint (as of July 2024)
+        self.BASE_URL = "https://my-api.plantnet.org/v2/identify/all"
         
     def identify_plant(self, image_path):
         try:
             with open(image_path, 'rb') as f:
-                # Correct API parameters
+                # Current required parameters
                 params = {
                     'api-key': self.api_key
                 }
                 
-                # Correct file format with organ type
+                # Current required format - must include plant organ type
                 files = [
                     ('images', (os.path.basename(image_path), f, 'image/jpeg'))
                 ]
                 
-                # Required data field
+                # Required data field in current API version
                 data = {
                     'organs': ['auto']  # Let API detect plant part automatically
                 }
@@ -33,8 +34,10 @@ class PlantNetAPI:
                     data=data
                 )
                 
-                # For debugging
-                print("API Response:", response.status_code, response.text)
+                # Debug output
+                print(f"Request to: {response.request.url}")
+                print(f"Status code: {response.status_code}")
+                print(f"Response: {response.text}")
                 
                 if response.status_code == 200:
                     data = response.json()
@@ -56,8 +59,13 @@ def main():
     st.set_page_config(page_title="Plant Identifier", page_icon="🌿")
     st.title("🌿 Plant Identification App")
     
-    # Get API key - replace with your actual key
-    api_key = st.text_input("Enter your PlantNet API Key", "2b10X3YLMd8PNAuKOCVPt7MeUe")
+    # Get API key - replace with your actual key from https://my.plantnet.org/
+    api_key = st.text_input("Enter your PlantNet API Key", type="password")
+    
+    if not api_key or api_key == "your-api-key-here":
+        st.warning("Please enter a valid PlantNet API key")
+        st.markdown("[Get your API key](https://my.plantnet.org/)")
+        return
     
     plantnet = PlantNetAPI(api_key)
     
@@ -66,13 +74,13 @@ def main():
         type=["jpg", "jpeg", "png"]
     )
     
-    if uploaded_file and api_key:
+    if uploaded_file:
         try:
             image = Image.open(uploaded_file)
-            st.image(image, use_container_width=True)
+            st.image(image, use_container_width=True, caption="Uploaded Image")
             
             # Save to temp file
-            temp_file = "temp_plant.jpg"
+            temp_file = f"temp_plant.{uploaded_file.name.split('.')[-1]}"
             with open(temp_file, "wb") as f:
                 f.write(uploaded_file.getvalue())
             
@@ -82,22 +90,22 @@ def main():
             st.subheader("Results")
             if "Error" in result:
                 st.error(result)
-                st.info("""
-                Troubleshooting tips:
-                1. Use a clear, close-up photo of leaves/flowers
-                2. Ensure your API key is valid
-                3. Check your internet connection
+                st.markdown("""
+                **Troubleshooting Tips:**
+                - Use a clear, close-up photo of leaves/flowers
+                - Ensure your API key is valid and not expired
+                - Try a different plant image
+                - Check [PlantNet Status](https://status.plantnet.org/) for API outages
                 """)
             else:
                 st.success(result)
+                st.balloons()
                 
         except Exception as e:
             st.error(f"Error processing image: {e}")
         finally:
             if os.path.exists(temp_file):
                 os.remove(temp_file)
-    elif not api_key:
-        st.warning("Please enter your PlantNet API key")
 
 if __name__ == "__main__":
     main()
