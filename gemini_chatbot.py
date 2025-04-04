@@ -1,7 +1,7 @@
 import google.generativeai as genai
 import os
+import random
 from dotenv import load_dotenv
-import json
 
 load_dotenv()
 
@@ -19,12 +19,11 @@ class GeminiPlantChat:
         2. Personality: {self.plant['Personality']['Prompt']}
         3. Key Traits: {", ".join(self.plant['Personality']['Traits'])}
         
-        CARE FACTS (reference when asked):
+        CARE FACTS:
         - 💧 Water: {self.plant['Watering']}
         - ☀️ Light: {self.plant['Light Requirements']}
         - 🌡️ Temp: {self.plant['Temperature Range']}
         - ⚠️ Toxicity: {self.plant['Toxicity']}
-        - 🌿 Additional: {self.plant['Additional Care']}
         """
         
         self.chat = self.model.start_chat(history=[
@@ -34,9 +33,9 @@ class GeminiPlantChat:
     
     def _get_greeting(self):
         greetings = [
-            f"*rustles leaves* Hello! I'm {self.plant['Plant Name']}. Ask me anything!",
-            f"*stretches stems* Greetings! {self.plant['Personality']['Prompt']}",
-            f"*shimmies leaves* Ready to chat! I'm {self.plant['Plant Name']} - {self.plant['Personality']['Title']}"
+            f"*rustles leaves* Hello! I'm {self.plant['Plant Name']}",
+            f"*stretches stems* {self.plant['Personality']['Prompt']}",
+            f"*shimmies leaves* Ready to chat!"
         ]
         return random.choice(greetings)
     
@@ -47,12 +46,6 @@ class GeminiPlantChat:
                 "temperature": 0.7,
                 "top_p": 0.9,
                 "max_output_tokens": 200
-            },
-            safety_settings={
-                "HARM_CATEGORY_HARASSMENT": "BLOCK_NONE",
-                "HARM_CATEGORY_HATE_SPEECH": "BLOCK_NONE",
-                "HARM_CATEGORY_SEXUALLY_EXPLICIT": "BLOCK_NONE",
-                "HARM_CATEGORY_DANGEROUS_CONTENT": "BLOCK_NONE"
             }
         )
         return response.text
