@@ -48,6 +48,7 @@ class PlantNetAPI:
         except Exception as e:
             return {'error': f"Processing Error: {str(e)}"}
 
+
 def load_plant_care_data():
     try:
         with open('plant_care_instructions.json') as f:
@@ -152,7 +153,12 @@ def main():
             if 'error' in result:
                 st.error(result['error'])
             else:
-                st.success(result['formatted_result'])
+                st.success(f"""
+                **Identified Plant:**  
+                Scientific Name: {result['scientific_name']}  
+                {f"Common Name: {result['common_name']}" if result['common_name'] else ""}  
+                Confidence: {result['confidence']}%
+                """)
                 
                 care_info = None
                 if result['common_name']:
