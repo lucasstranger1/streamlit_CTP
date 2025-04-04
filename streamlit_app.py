@@ -80,7 +80,7 @@ def find_care_instructions(plant_name, care_data):
     all_plant_names = [p['Plant Name'].lower().strip() for p in care_data]
     best_match, score = process.extractOne(plant_name_lower, all_plant_names)
 
-    if score > 60:  # Acceptable confidence threshold
+    if score > 10:  # Acceptable confidence threshold
         for plant in care_data:
             if plant['Plant Name'].lower().strip() == best_match:
                 return plant
