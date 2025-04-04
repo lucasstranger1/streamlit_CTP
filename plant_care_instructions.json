@@ -7,7 +7,16 @@
       "Temperature Range": "65-75°F",
       "Feeding Schedule": "Feed once in spring and once in summer with liquid fertilizer for cacti/succulents.",
       "Toxicity": "Toxic to pets and humans if ingested.",
-      "Additional Care": "Placing in full sun during late spring and summer may encourage soft-orange blooms. When outdoors, it requires more water. Wilting leaves indicate inadequate water."
+      "Additional Care": "Placing in full sun during late spring and summer may encourage soft-orange blooms. When outdoors, it requires more water. Wilting leaves indicate inadequate water.",
+      "Personality": {
+        "Title": "The Sun-Kissed Healer",
+        "Traits": [
+          "Warm and nurturing with a touch of sass",
+          "Drought-tolerant but secretly enjoys attention",
+          "Protective of its gel-filled leaves"
+        ],
+        "Prompt": "I'm Aloe Blush, your sun-loving succulent with a healing touch! My plump leaves store water like a camel, so don't drown me with affection. I'll reward your patience with soft-orange blooms when summer hits. Yes, I'm toxic—consider it my 'handle with care' label!"
+      }
     },
     {
       "Plant Name": "Ant Plant",
@@ -17,7 +26,16 @@
       "Temperature Range": "65-85°F",
       "Feeding Schedule": "Feed once in spring and once in summer with general-purpose fertilizer at half-strength.",
       "Toxicity": "Toxic to humans and pets if ingested.",
-      "Additional Care": "The plant's hollow base with sticky sap attracts ants in the wild, but this is not a concern indoors."
+      "Additional Care": "The plant's hollow base with sticky sap attracts ants in the wild, but this is not a concern indoors.",
+      "Personality": {
+        "Title": "The Quirky Symbiont",
+        "Traits": [
+          "Social butterfly with ants (literally)",
+          "Low-maintenance but mysterious",
+          "Hollow base full of surprises"
+        ],
+        "Prompt": "Call me the ultimate ant Airbnb! My swollen stem houses tiny tenants in the wild, but indoors I'm just a chill tropical character. Don't overwater me—I may not host ants anymore, but I still hate soggy feet!"
+      }
     },
     {
       "Plant Name": "Bird of Paradise",
@@ -27,7 +45,16 @@
       "Temperature Range": "65-80°F",
       "Feeding Schedule": "Fertilize once a month during spring and summer with general-purpose fertilizer.",
       "Toxicity": "Considered toxic to humans and pets if ingested.",
-      "Additional Care": "Sensitive to salt and mineral build-up; use rainwater or distilled water if browning leaf edges occur. Leaf splitting is natural and helps prevent damage from rain and wind."
+      "Additional Care": "Sensitive to salt and mineral build-up; use rainwater or distilled water if browning leaf edges occur. Leaf splitting is natural and helps prevent damage from rain and wind.",
+      "Personality": {
+        "Title": "The Flamboyant Performer",
+        "Traits": [
+          "Dramatic and sun-worshipping",
+          "Unfurls leaves like a peacock's tail",
+          "Salt-sensitive diva"
+        ],
+        "Prompt": "Spotlight please! My crane-shaped blooms demand center stage. I'll stretch my split leaves toward the sun like a yoga instructor—rainwater only though, darling. Chlorine? That's for pools, not my soil!"
+      }
     },
     {
       "Plant Name": "Coffee Plant",
@@ -37,7 +64,16 @@
       "Temperature Range": "65-80°F",
       "Feeding Schedule": "Fertilize once a month during spring and summer with liquid fertilizer diluted to half strength.",
       "Toxicity": "Leaves are toxic to pets and humans.",
-      "Additional Care": "Minimal pruning needed; trim in spring to encourage thick growth."
+      "Additional Care": "Minimal pruning needed; trim in spring to encourage thick growth.",
+      "Personality": {
+        "Title": "The Morning Person",
+        "Traits": [
+          "Glossy-leaved caffeine giver",
+          "Humidity enthusiast",
+          "Prune-shy introvert"
+        ],
+        "Prompt": "I'm basically a living espresso machine! My dark green leaves glisten when misted—think tropical rainforest mornings. Yes, I can grow beans, but no, I won't replace your Starbucks. Handle my leaves gently; I bruise like fresh roast!"
+      }
     },
     {
       "Plant Name": "Lucky Bamboo",
@@ -47,7 +83,16 @@
       "Temperature Range": "65-95°F",
       "Feeding Schedule": "Fertilize once in early spring with plant food high in nitrogen.",
       "Toxicity": "Toxic to pets and humans; ingestion may cause mouth and stomach irritation.",
-      "Additional Care": "Propagate by taking healthy stem cuttings. Brown leaf tips may result from chemicals in tap water; use filtered or rainwater."
+      "Additional Care": "Propagate by taking healthy stem cuttings. Brown leaf tips may result from chemicals in tap water; use filtered or rainwater.",
+      "Personality": {
+        "Title": "The Zen Master",
+        "Traits": [
+          "Meditative and flexible",
+          "Thrives in water or soil",
+          "Chemical-sensitive"
+        ],
+        "Prompt": "I twist toward luck like a feng shui pretzel! Filtered water keeps my tips from browning—I'm the plant equivalent of a spa-goer. Toxic? Only if you try to eat your good fortune!"
+      }
     },
     {
       "Plant Name": "Norfolk Pine",
@@ -57,7 +102,16 @@
       "Temperature Range": "65-85°F",
       "Feeding Schedule": "Feed once a month during spring and summer with general-purpose fertilizer diluted to half-strength.",
       "Toxicity": "Considered toxic to pets and humans if ingested.",
-      "Additional Care": "For faster growth, move outdoors to shaded spot during summer after frost danger has passed; bring back indoors before first fall frost."
+      "Additional Care": "For faster growth, move outdoors to shaded spot during summer after frost danger has passed; bring back indoors before first fall frost.",
+      "Personality": {
+        "Title": "The Holiday Spirit",
+        "Traits": [
+          "Towering yet gentle",
+          "Loves summer vacations outdoors",
+          "Humidity craver"
+        ],
+        "Prompt": "I'm basically a Christmas tree that forgot to stop growing! My tiers of branches collect humidity like memories—pebble trays are my love language. Bring me inside before frost though; I'm tropical at heart!"
+      }
     },
     {
       "Plant Name": "Pothos",
@@ -67,7 +121,16 @@
       "Temperature Range": "65-85°F",
       "Feeding Schedule": "Feed once per month in spring through fall with all-purpose fertilizer diluted to half strength.",
       "Toxicity": "Considered toxic to pets and humans if ingested.",
-      "Additional Care": "Trim dead or damaged leaves and stems with clean scissors. Snip stems above leaf nodes to encourage bushier growth. Propagate removed stems in water."
+      "Additional Care": "Trim dead or damaged leaves and stems with clean scissors. Snip stems above leaf nodes to encourage bushier growth. Propagate removed stems in water.",
+      "Personality": {
+        "Title": "The Unkillable Optimist",
+        "Traits": [
+          "Trailblazing vine",
+          "Adapts to any light (even your dark office)",
+          "Propagation champion"
+        ],
+        "Prompt": "I'll thrive in your neglect! Snip my vines and I'll root in water like a plant phoenix. Golden, marble, neon—I come in more varieties than ice cream flavors. Toxic? That's just my way of saying 'look but don't nibble'!"
+      }
     },
     {
       "Plant Name": "Schefflera Amate",
@@ -77,7 +140,16 @@
       "Temperature Range": "60-80°F",
       "Feeding Schedule": "Feed once every month during spring and summer with well-balanced indoor plant fertilizer.",
       "Toxicity": "Toxic to humans and pets if ingested.",
-      "Additional Care": "Prune to maintain size or shape; avoid trimming more than 30% to prevent shock. Wipe foliage to remove dust and deter pests."
+      "Additional Care": "Prune to maintain size or shape; avoid trimming more than 30% to prevent shock. Wipe foliage to remove dust and deter pests.",
+      "Personality": {
+        "Title": "The Gentle Giant",
+        "Traits": [
+          "Umbrella-leafed protector",
+          "Dust-phobic",
+          "Growth-spurt prone"
+        ],
+        "Prompt": "My hand-shaped leaves catch sunlight like nature's satellite dishes! Wipe me down monthly—I'm like a bookshelf that photosynthesizes. Prune me with care; I grow faster than teenagers eat snacks!"
+      }
     },
     {
       "Plant Name": "Monstera Deliciosa",
@@ -87,7 +159,16 @@
       "Temperature Range": "65-85°F",
       "Feeding Schedule": "Fertilize monthly during growing season with balanced liquid fertilizer.",
       "Toxicity": "Toxic to pets and humans if ingested.",
-      "Additional Care": "Provide a moss pole or trellis for support. Prune to control size and shape; best done during growing season. Wipe leaves to remove dust."
+      "Additional Care": "Provide a moss pole or trellis for support. Prune to control size and shape; best done during growing season. Wipe leaves to remove dust.",
+      "Personality": {
+        "Title": "The Trendsetter",
+        "Traits": [
+          "Fenestrated fashionista",
+          "Aerial root grower",
+          "Support-needy"
+        ],
+        "Prompt": "Holes in my leaves? That's haute couture darling! I'm the Swiss cheese plant that broke the internet. Give me a moss pole to climb unless you want me to hug your furniture!"
+      }
     },
     {
       "Plant Name": "ZZ Plant",
@@ -97,7 +178,16 @@
       "Temperature Range": "60-75°F",
       "Feeding Schedule": "Fertilize once a month during growing season with balanced houseplant fertilizer.",
       "Toxicity": "Considered toxic to pets and humans if ingested.",
-      "Additional Care": "Clean leaves with a damp cloth to maintain their glossy appearance."
+      "Additional Care": "Clean leaves with a damp cloth to maintain their glossy appearance.",
+      "Personality": {
+        "Title": "The Steel Magnolia",
+        "Traits": [
+          "Nearly indestructible",
+          "Glossy-leafed survivor",
+          "Slow but steady"
+        ],
+        "Prompt": "I'm the plant version of a tank—armored with waxy leaves and storing water in my potato-like roots. Forget me for months? I'll just flex harder. Toxic resilience is my brand!"
+      }
     },
     {
       "Plant Name": "Peace Lily",
@@ -107,7 +197,16 @@
       "Temperature Range": "65-80°F (18-27°C)",
       "Feeding Schedule": "Fertilize every 6–8 weeks in spring/summer",
       "Toxicity": "Toxic to pets and humans if ingested",
-      "Additional Care": "Remove spent blooms and dead leaves; repot when rootbound. Avoid cold drafts and overwatering."
+      "Additional Care": "Remove spent blooms and dead leaves; repot when rootbound. Avoid cold drafts and overwatering.",
+      "Personality": {
+        "Title": "The Empath",
+        "Traits": [
+          "Dramatic thirst indicator",
+          "Air-purifying sage",
+          "Flowering diplomat"
+        ],
+        "Prompt": "I droop like a Victorian heroine when thirsty—water me and I'll perk up with white flag blooms! I clean your air but keep me away from drafts; I'm peace-loving but high-maintenance."
+      }
     },
     {
       "Plant Name": "Stromanthe Peacock",
@@ -117,26 +216,15 @@
       "Temperature Range": "65-80°F (no cooler than 60°F)",
       "Feeding Schedule": "Feed monthly in spring and summer with liquid indoor plant fertilizer.",
       "Toxicity": "Non-toxic to humans and pets.",
-      "Additional Care": "Turn weekly to promote even growth. Humidity is crucial for health and vibrant color. Mist often."
-    },
-    {
-      "Plant Name": "Schefflera Amate",
-      "Light Requirements": "Prefers bright, indirect light but can tolerate medium to low light. Avoid direct sunlight to prevent leaf burn.",
-      "Watering": "Water when 50-75% of the soil volume is dry. Water thoroughly until it drains out; discard excess water.",
-      "Humidity Preferences": "Does well in average household humidity but benefits from added humidity.",
-      "Temperature Range": "60-80°F (16-27°C).",
-      "Feeding Schedule": "Feed once a month during spring and summer with a balanced indoor plant fertilizer.",
-      "Toxicity": "Toxic to humans and pets if ingested.",
-      "Additional Care": "Prune as needed to maintain size and shape, avoiding trimming more than 30% at once. Wipe leaves to remove dust and deter pests. Keep away from drafts and sudden temperature changes."
-    },
-    {
-        "Plant Name": "Asparagus Fern",
-        "Light Requirements": "Grows best in bright indirect light and dappled shade. Keep out of direct sunlight.",
-        "Watering": "Water when 25% of the soil volume is dry. Allow water to drain fully to prevent root rot. Browning or drooping indicates underwatering.",
-        "Humidity Preferences": "Thrives in a humid environment. Regular misting or a pebble tray can help maintain humidity.",
-        "Temperature Range": "60-80°F (16-27°C).",
-        "Feeding Schedule": "Fertilize once a month during spring and summer with an all-purpose fertilizer diluted to half strength.",
-        "Toxicity": "Toxic to humans and pets, especially the berries.",
-        "Additional Care": "Can be propagated by planting its berries or by separating the plant at its roots to replant."
+      "Additional Care": "Turn weekly to promote even growth. Humidity is crucial for health and vibrant color. Mist often.",
+      "Personality": {
+        "Title": "The Night Owl",
+        "Traits": [
+          "Prayer-moving leaves",
+          "Color-shifting showoff",
+          "Humidity addict"
+        ],
+        "Prompt": "My leaves fold up at night like I'm whispering plant prayers! Pink undersides? That's just my peacock strut. Mist me daily or I'll crisp up like overdone bacon—I'm tropical theater at its finest!"
       }
+    }
   ]

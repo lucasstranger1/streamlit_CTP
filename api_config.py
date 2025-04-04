@@ -1,0 +1,2 @@
+# api_config.py
+PLANTNET_API_KEY = "2b10X3YLMd8PNAuKOCVPt7MeUe"

@@ -4,10 +4,11 @@ from PIL import Image
 import os
 import json
 from difflib import get_close_matches
+from api_config import PLANTNET_API_KEY  # Import API key from separate file
 
 class PlantNetAPI:
-    def __init__(self, api_key):
-        self.api_key = api_key
+    def __init__(self):
+        self.api_key = PLANTNET_API_KEY
         self.BASE_URL = "https://my-api.plantnet.org/v2/identify/all"
         
     def identify_plant(self, image_path):
@@ -56,18 +57,15 @@ def find_care_instructions(plant_name, care_data):
     if not plant_name or not care_data:
         return None
     
-    # First try exact matching (case insensitive)
     plant_name_lower = plant_name.lower()
     for plant in care_data:
         if plant_name_lower == plant['Plant Name'].lower():
             return plant
     
-    # Then try partial matching (if "Aloe" in "Aloe Blush")
     for plant in care_data:
         if plant_name_lower in plant['Plant Name'].lower() or plant['Plant Name'].lower() in plant_name_lower:
             return plant
     
-    # Finally try fuzzy matching for similar names
     all_plant_names = [p['Plant Name'].lower() for p in care_data]
     matches = get_close_matches(plant_name_lower, all_plant_names, n=1, cutoff=0.6)
     if matches:
@@ -112,24 +110,23 @@ def display_care_instructions(care_info):
     st.markdown(f"""
     **📝 Additional Care**  
     {care_info.get('Additional Care', 'Not specified')}
+    
+    **🌟 Personality: {care_info.get('Personality', {}).get('Title', 'Not specified')}**
+    
+    **Traits:**  
+    {' - '.join(care_info.get('Personality', {}).get('Traits', []))}
+    
+    **🌿 Plant's Story:**  
+    {care_info.get('Personality', {}).get('Prompt', 'Not specified')}
     """)
 
 def main():
     st.set_page_config(page_title="Plant Identifier", page_icon="🌿")
     st.title("🌿 Smart Plant Identifier + Care Guide")
     
-    # Load plant care data
     plant_care_data = load_plant_care_data()
     
-    # Get API key
-    api_key = st.text_input("Enter your PlantNet API Key", type="password")
-    
-    if not api_key or api_key == "your-api-key-here":
-        st.warning("Please enter a valid PlantNet API key")
-        st.markdown("[Get your API key](https://my.plantnet.org/)")
-        return
-    
-    plantnet = PlantNetAPI(api_key)
+    plantnet = PlantNetAPI()
     
     uploaded_file = st.file_uploader(
         "Upload a clear plant photo (leaves, flowers, or fruits work best)",
@@ -141,7 +138,6 @@ def main():
             image = Image.open(uploaded_file)
             st.image(image, use_container_width=True, caption="Uploaded Image")
             
-            # Save to temp file
             temp_file = f"temp_plant.{uploaded_file.name.split('.')[-1]}"
             with open(temp_file, "wb") as f:
                 f.write(uploaded_file.getvalue())
@@ -160,7 +156,6 @@ def main():
                 Confidence: {result['confidence']}%
                 """)
                 
-                # Try to find care instructions using both names
                 care_info = None
                 if result['common_name']:
                     care_info = find_care_instructions(result['common_name'], plant_care_data)
@@ -171,13 +166,7 @@ def main():
                     display_care_instructions(care_info)
                 else:
                     st.warning(f"No care instructions found for: {result['scientific_name']}")
-                    st.info("""
-                    Tips to improve matching:
-                    - The common name might be different in our database
-                    - Try using the scientific name variant
-                    - Some plants might not be in our care database
-                    """)
-                
+        
         except Exception as e:
             st.error(f"Error processing image: {e}")
         finally:
