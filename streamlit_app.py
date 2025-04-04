@@ -31,12 +31,15 @@ class PlantNetAPI:
                         best_match = data['results'][0]
                         scientific_name = best_match['species']['scientificNameWithoutAuthor']
                         common_names = best_match['species'].get('commonNames', [])
-                        common_name = common_names[0] if common_names else None
+                        common_name = common_names[0] if common_names else 'Unknown'
                         confidence = round(best_match['score'] * 100, 1)
+                        
+                        formatted_result = f"{scientific_name} ({common_name}) - Confidence: {confidence}%"
                         return {
                             'scientific_name': scientific_name,
                             'common_name': common_name,
-                            'confidence': confidence
+                            'confidence': confidence,
+                            'formatted_result': formatted_result
                         }
                     return {'error': "No plant match found."}
                 else:
@@ -149,12 +152,7 @@ def main():
             if 'error' in result:
                 st.error(result['error'])
             else:
-                st.success(f"""
-                **Identified Plant:**  
-                Scientific Name: {result['scientific_name']}  
-                {f"Common Name: {result['common_name']}" if result['common_name'] else ""}  
-                Confidence: {result['confidence']}%
-                """)
+                st.success(result['formatted_result'])
                 
                 care_info = None
                 if result['common_name']:
