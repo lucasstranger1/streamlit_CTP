@@ -1,0 +1,132 @@
+[
+    {
+      "Plant Name": "Aloe Blush",
+      "Light Requirements": "Prefers bright indirect light to full sun. Insufficient light causes leaves to droop.",
+      "Watering": "Water when soil is completely dry. Water thoroughly until it drains out; discard excess water.",
+      "Humidity Preferences": "Does not require extra humidity; tolerates dry air.",
+      "Temperature Range": "65-75°F",
+      "Feeding Schedule": "Feed once in spring and once in summer with liquid fertilizer for cacti/succulents.",
+      "Toxicity": "Toxic to pets and humans if ingested.",
+      "Additional Care": "Placing in full sun during late spring and summer may encourage soft-orange blooms. When outdoors, it requires more water. Wilting leaves indicate inadequate water."
+    },
+    {
+      "Plant Name": "Ant Plant",
+      "Light Requirements": "Prefers indirect bright light; too much light scorches leaves; intolerant to low light.",
+      "Watering": "Water when 50-75% of soil is dry. Avoid soggy soil. Water thoroughly and discard excess.",
+      "Humidity Preferences": "Tolerates average household humidity; increase humidity if air becomes too dry.",
+      "Temperature Range": "65-85°F",
+      "Feeding Schedule": "Feed once in spring and once in summer with general-purpose fertilizer at half-strength.",
+      "Toxicity": "Toxic to humans and pets if ingested.",
+      "Additional Care": "The plant's hollow base with sticky sap attracts ants in the wild, but this is not a concern indoors."
+    },
+    {
+      "Plant Name": "Bird of Paradise",
+      "Light Requirements": "Can handle direct and bright indirect light; thrives in direct sun.",
+      "Watering": "Water when 50% of soil is dry. Water until it drains out; discard excess water.",
+      "Humidity Preferences": "Prefers a humid environment; use a pebble tray or humidifier if leaf edges become crispy.",
+      "Temperature Range": "65-80°F",
+      "Feeding Schedule": "Fertilize once a month during spring and summer with general-purpose fertilizer.",
+      "Toxicity": "Considered toxic to humans and pets if ingested.",
+      "Additional Care": "Sensitive to salt and mineral build-up; use rainwater or distilled water if browning leaf edges occur. Leaf splitting is natural and helps prevent damage from rain and wind."
+    },
+    {
+      "Plant Name": "Coffee Plant",
+      "Light Requirements": "Prefers bright indirect sunlight; too much direct sunlight can brown leaves.",
+      "Watering": "Water when 25% of soil is dry. Water until it drains out; discard excess water.",
+      "Humidity Preferences": "Loves a humid environment; mist daily or use a humidifier. Browning leaves may indicate low humidity.",
+      "Temperature Range": "65-80°F",
+      "Feeding Schedule": "Fertilize once a month during spring and summer with liquid fertilizer diluted to half strength.",
+      "Toxicity": "Leaves are toxic to pets and humans.",
+      "Additional Care": "Minimal pruning needed; trim in spring to encourage thick growth."
+    },
+    {
+      "Plant Name": "Lucky Bamboo",
+      "Light Requirements": "Prefers bright indirect sunlight but can survive in low-light conditions.",
+      "Watering": "Water when top 50% of soil is dry. Water until it drains out; discard excess water.",
+      "Humidity Preferences": "Does well in average household humidity; keep away from open vents or drafts.",
+      "Temperature Range": "65-95°F",
+      "Feeding Schedule": "Fertilize once in early spring with plant food high in nitrogen.",
+      "Toxicity": "Toxic to pets and humans; ingestion may cause mouth and stomach irritation.",
+      "Additional Care": "Propagate by taking healthy stem cuttings. Brown leaf tips may result from chemicals in tap water; use filtered or rainwater."
+    },
+    {
+      "Plant Name": "Norfolk Pine",
+      "Light Requirements": "Prefers bright indirect light to direct sunlight; can adapt to medium light but may become leggy.",
+      "Watering": "Water when 25% of soil is dry. Water until it drains out; discard excess water.",
+      "Humidity Preferences": "Appreciates increased humidity during winter; use pebble tray, humidifier, or group with other plants.",
+      "Temperature Range": "65-85°F",
+      "Feeding Schedule": "Feed once a month during spring and summer with general-purpose fertilizer diluted to half-strength.",
+      "Toxicity": "Considered toxic to pets and humans if ingested.",
+      "Additional Care": "For faster growth, move outdoors to shaded spot during summer after frost danger has passed; bring back indoors before first fall frost."
+    },
+    {
+      "Plant Name": "Pothos",
+      "Light Requirements": "Prefers indirect bright light; tolerates lower light but growth slows; avoid prolonged direct light.",
+      "Watering": "Water when 50-75% of soil is dry. Water until it drains out; discard excess water.",
+      "Humidity Preferences": "Does well in average household humidity; thrives with increased humidity.",
+      "Temperature Range": "65-85°F",
+      "Feeding Schedule": "Feed once per month in spring through fall with all-purpose fertilizer diluted to half strength.",
+      "Toxicity": "Considered toxic to pets and humans if ingested.",
+      "Additional Care": "Trim dead or damaged leaves and stems with clean scissors. Snip stems above leaf nodes to encourage bushier growth. Propagate removed stems in water."
+    },
+    {
+      "Plant Name": "Schefflera Amate",
+      "Light Requirements": "Prefers bright indirect light; tolerates medium and low light; too much direct sunlight can burn foliage.",
+      "Watering": "Water when 50-75% of soil is dry. Water thoroughly until it drains out; discard excess water.",
+      "Humidity Preferences": "Tolerates average household humidity; benefits from added humidity.",
+      "Temperature Range": "60-80°F",
+      "Feeding Schedule": "Feed once every month during spring and summer with well-balanced indoor plant fertilizer.",
+      "Toxicity": "Toxic to humans and pets if ingested.",
+      "Additional Care": "Prune to maintain size or shape; avoid trimming more than 30% to prevent shock. Wipe foliage to remove dust and deter pests."
+    },
+    {
+      "Plant Name": "Monstera Deliciosa",
+      "Light Requirements": "Thrives in bright, indirect light; can tolerate some direct sunlight.",
+      "Watering": "Water when top 2-3 inches of soil are dry. Water thoroughly until it drains out; discard excess water.",
+      "Humidity Preferences": "Prefers high humidity; mist regularly or use a humidifier.",
+      "Temperature Range": "65-85°F",
+      "Feeding Schedule": "Fertilize monthly during growing season with balanced liquid fertilizer.",
+      "Toxicity": "Toxic to pets and humans if ingested.",
+      "Additional Care": "Provide a moss pole or trellis for support. Prune to control size and shape; best done during growing season. Wipe leaves to remove dust."
+    },
+    {
+      "Plant Name": "ZZ Plant",
+      "Light Requirements": "Prefers bright, indirect light but can tolerate low light conditions.",
+      "Watering": "Water when soil has dried out completely. Avoid overwatering to prevent root rot.",
+      "Humidity Preferences": "Tolerates average household humidity.",
+      "Temperature Range": "60-75°F",
+      "Feeding Schedule": "Fertilize once a month during growing season with balanced houseplant fertilizer.",
+      "Toxicity": "Considered toxic to pets and humans if ingested.",
+      "Additional Care": "Clean leaves with a damp cloth to maintain their glossy appearance."
+    },
+    {
+      "Plant Name": "Peace Lily",
+      "Light Requirements": "Thrives in medium to low light; avoid direct sunlight.",
+      "Watering": "Water when soil is dry to the touch. Keep consistently moist but not soggy.",
+      "Humidity Preferences": "Prefers high humidity; mist regularly or use a humidifier.",
+      "Temperature Range": "65-80°F (18-27°C)",
+      "Feeding Schedule": "Fertilize every 6–8 weeks in spring/summer",
+      "Toxicity": "Toxic to pets and humans if ingested",
+      "Additional Care": "Remove spent blooms and dead leaves; repot when rootbound. Avoid cold drafts and overwatering."
+    },
+    {
+      "Plant Name": "Stromanthe Peacock",
+      "Light Requirements": "Prefers warm, well-lit spots with bright indirect light. Avoid direct sunlight.",
+      "Watering": "Water when top 25% of soil is dry. Water thoroughly until it drains out; discard excess.",
+      "Humidity Preferences": "Loves high humidity. Mist daily, use a pebble tray or humidifier during dry seasons.",
+      "Temperature Range": "65-80°F (no cooler than 60°F)",
+      "Feeding Schedule": "Feed monthly in spring and summer with liquid indoor plant fertilizer.",
+      "Toxicity": "Non-toxic to humans and pets.",
+      "Additional Care": "Turn weekly to promote even growth. Humidity is crucial for health and vibrant color. Mist often."
+    },
+    {
+      "Plant Name": "Schefflera Amate",
+      "Light Requirements": "Prefers bright, indirect light but can tolerate medium to low light. Avoid direct sunlight to prevent leaf burn.",
+      "Watering": "Water when 50-75% of the soil volume is dry. Water thoroughly until it drains out; discard excess water.",
+      "Humidity Preferences": "Does well in average household humidity but benefits from added humidity.",
+      "Temperature Range": "60-80°F (16-27°C).",
+      "Feeding Schedule": "Feed once a month during spring and summer with a balanced indoor plant fertilizer.",
+      "Toxicity": "Toxic to humans and pets if ingested.",
+      "Additional Care": "Prune as needed to maintain size and shape, avoiding trimming more than 30% at once. Wipe leaves to remove dust and deter pests. Keep away from drafts and sudden temperature changes."
+    }
+  ]
