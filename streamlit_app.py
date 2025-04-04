@@ -3,6 +3,7 @@ import requests
 from PIL import Image
 import os
 import json
+from difflib import get_close_matches
 
 class PlantNetAPI:
     def __init__(self, api_key):
@@ -29,7 +30,7 @@ class PlantNetAPI:
                         best_match = data['results'][0]
                         scientific_name = best_match['species']['scientificNameWithoutAuthor']
                         common_names = best_match['species'].get('commonNames', [])
-                        common_name = common_names[0] if common_names else 'Unknown'
+                        common_name = common_names[0] if common_names else None
                         confidence = round(best_match['score'] * 100, 1)
                         return {
                             'scientific_name': scientific_name,
@@ -44,15 +45,74 @@ class PlantNetAPI:
             return {'error': f"Processing Error: {str(e)}"}
 
 def load_plant_care_data():
-    with open('plant_care_instructions.json') as f:
-        return json.load(f)
+    try:
+        with open('plant_care_instructions.json') as f:
+            return json.load(f)
+    except Exception as e:
+        st.error(f"Failed to load care instructions: {str(e)}")
+        return []
 
 def find_care_instructions(plant_name, care_data):
+    if not plant_name or not care_data:
+        return None
+    
+    # First try exact matching (case insensitive)
     plant_name_lower = plant_name.lower()
     for plant in care_data:
-        if plant_name_lower in plant['Plant Name'].lower():
+        if plant_name_lower == plant['Plant Name'].lower():
             return plant
+    
+    # Then try partial matching (if "Aloe" in "Aloe Blush")
+    for plant in care_data:
+        if plant_name_lower in plant['Plant Name'].lower() or plant['Plant Name'].lower() in plant_name_lower:
+            return plant
+    
+    # Finally try fuzzy matching for similar names
+    all_plant_names = [p['Plant Name'].lower() for p in care_data]
+    matches = get_close_matches(plant_name_lower, all_plant_names, n=1, cutoff=0.6)
+    if matches:
+        matched_name = matches[0]
+        for plant in care_data:
+            if plant['Plant Name'].lower() == matched_name:
+                return plant
+    
     return None
+
+def display_care_instructions(care_info):
+    if not care_info:
+        return
+    
+    st.subheader("🌱 Care Instructions")
+    
+    cols = st.columns(2)
+    with cols[0]:
+        st.markdown(f"""
+        **☀️ Light Requirements**  
+        {care_info.get('Light Requirements', 'Not specified')}
+        
+        **💧 Watering**  
+        {care_info.get('Watering', 'Not specified')}
+        
+        **🌡️ Temperature Range**  
+        {care_info.get('Temperature Range', 'Not specified')}
+        """)
+    
+    with cols[1]:
+        st.markdown(f"""
+        **💦 Humidity Preferences**  
+        {care_info.get('Humidity Preferences', 'Not specified')}
+        
+        **🌿 Feeding Schedule**  
+        {care_info.get('Feeding Schedule', 'Not specified')}
+        
+        **⚠️ Toxicity**  
+        {care_info.get('Toxicity', 'Not specified')}
+        """)
+    
+    st.markdown(f"""
+    **📝 Additional Care**  
+    {care_info.get('Additional Care', 'Not specified')}
+    """)
 
 def main():
     st.set_page_config(page_title="Plant Identifier", page_icon="🌿")
@@ -96,45 +156,27 @@ def main():
                 st.success(f"""
                 **Identified Plant:**  
                 Scientific Name: {result['scientific_name']}  
-                Common Name: {result['common_name']}  
+                {f"Common Name: {result['common_name']}" if result['common_name'] else ""}  
                 Confidence: {result['confidence']}%
                 """)
                 
-                # Find care instructions
-                care_info = find_care_instructions(result['common_name'], plant_care_data) or \
-                          find_care_instructions(result['scientific_name'], plant_care_data)
+                # Try to find care instructions using both names
+                care_info = None
+                if result['common_name']:
+                    care_info = find_care_instructions(result['common_name'], plant_care_data)
+                if not care_info and result['scientific_name']:
+                    care_info = find_care_instructions(result['scientific_name'], plant_care_data)
                 
                 if care_info:
-                    st.subheader("🌱 Care Instructions")
-                    cols = st.columns(2)
-                    with cols[0]:
-                        st.markdown(f"""
-                        **☀️ Light Requirements**  
-                        {care_info['Light Requirements']}
-                        
-                        **💧 Watering**  
-                        {care_info['Watering']}
-                        
-                        **🌡️ Temperature Range**  
-                        {care_info['Temperature Range']}
-                        """)
-                    with cols[1]:
-                        st.markdown(f"""
-                        **💦 Humidity Preferences**  
-                        {care_info['Humidity Preferences']}
-                        
-                        **🌿 Feeding Schedule**  
-                        {care_info['Feeding Schedule']}
-                        
-                        **⚠️ Toxicity**  
-                        {care_info['Toxicity']}
-                        """)
-                    st.markdown(f"""
-                    **📝 Additional Care**  
-                    {care_info['Additional Care']}
-                    """)
+                    display_care_instructions(care_info)
                 else:
-                    st.warning("No care instructions found for this plant.")
+                    st.warning(f"No care instructions found for: {result['scientific_name']}")
+                    st.info("""
+                    Tips to improve matching:
+                    - The common name might be different in our database
+                    - Try using the scientific name variant
+                    - Some plants might not be in our care database
+                    """)
                 
         except Exception as e:
             st.error(f"Error processing image: {e}")
