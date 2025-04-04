@@ -169,8 +169,13 @@ def display_care_instructions(care_info):
 
 def run_chatbot(care_info):
     if not care_info:
+        st.warning("Chatbot: No plant data available")
         return
-    
+    # Ensure session state exists
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = [
+            {"role": "assistant", "content": f"Hi! I'm {care_info['Plant Name']}. Ask me anything!"}
+        ]
     st.divider()
     st.subheader(f"💬 Chat with {care_info['Plant Name']}")
     
