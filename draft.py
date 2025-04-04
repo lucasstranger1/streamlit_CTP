@@ -12,20 +12,9 @@ class PlantNetAPI:
     def identify_plant(self, image_path):
         try:
             with open(image_path, 'rb') as f:
-                # Current required parameters
-                params = {
-                    'api-key': self.api_key
-                }
-                
-                # Current required format - must include plant organ type
-                files = [
-                    ('images', (os.path.basename(image_path), f, 'image/jpeg'))
-                ]
-                
-                # Required data field in current API version
-                data = {
-                    'organs': ['auto']  # Let API detect plant part automatically
-                }
+                params = {'api-key': self.api_key}
+                files = [('images', (os.path.basename(image_path), f, 'image/jpeg'))]
+                data = {'organs': ['auto']}
                 
                 response = requests.post(
                     self.BASE_URL,
@@ -33,11 +22,6 @@ class PlantNetAPI:
                     params=params,
                     data=data
                 )
-                
-                # Debug output
-                print(f"Request to: {response.request.url}")
-                print(f"Status code: {response.status_code}")
-                print(f"Response: {response.text}")
                 
                 if response.status_code == 200:
                     data = response.json()
@@ -47,13 +31,20 @@ class PlantNetAPI:
                         common_names = best_match['species'].get('commonNames', [])
                         common_name = common_names[0] if common_names else 'Unknown'
                         confidence = round(best_match['score'] * 100, 1)
-                        return f"{scientific_name} ({common_name}) - Confidence: {confidence}%"
-                    return "No plant match found."
+                        
+                        formatted_result = f"{scientific_name} ({common_name}) - Confidence: {confidence}%"
+                        return {
+                            'scientific_name': scientific_name,
+                            'common_name': common_name,
+                            'confidence': confidence,
+                            'formatted_result': formatted_result
+                        }
+                    return {'error': "No plant match found."}
                 else:
-                    return f"API Error {response.status_code}: {response.text}"
+                    return {'error': f"API Error {response.status_code}: {response.text}"}
                 
         except Exception as e:
-            return f"Error: {str(e)}"
+            return {'error': f"Processing Error: {str(e)}"}
 
 def main():
     st.set_page_config(page_title="Plant Identifier", page_icon="🌿")
