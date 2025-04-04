@@ -5,6 +5,9 @@ import os
 import json
 from difflib import get_close_matches
 from api_config import PLANTNET_API_KEY  # Import API key from separate file
+from fuzzywuzzy import process
+
+
 
 class PlantNetAPI:
     def __init__(self):
@@ -61,21 +64,25 @@ def find_care_instructions(plant_name, care_data):
     if not plant_name or not care_data:
         return None
     
-    plant_name_lower = plant_name.lower()
+    plant_name_lower = plant_name.lower().strip()
+
+    # Exact match
     for plant in care_data:
-        if plant_name_lower == plant['Plant Name'].lower():
+        if plant_name_lower == plant['Plant Name'].lower().strip():
             return plant
-    
+
+    # Substring match
     for plant in care_data:
         if plant_name_lower in plant['Plant Name'].lower() or plant['Plant Name'].lower() in plant_name_lower:
             return plant
-    
-    all_plant_names = [p['Plant Name'].lower() for p in care_data]
-    matches = get_close_matches(plant_name_lower, all_plant_names, n=1, cutoff=0.6)
-    if matches:
-        matched_name = matches[0]
+
+    # Fuzzy matching
+    all_plant_names = [p['Plant Name'].lower().strip() for p in care_data]
+    best_match, score = process.extractOne(plant_name_lower, all_plant_names)
+
+    if score > 60:  # Acceptable confidence threshold
         for plant in care_data:
-            if plant['Plant Name'].lower() == matched_name:
+            if plant['Plant Name'].lower().strip() == best_match:
                 return plant
     
     return None
@@ -152,6 +159,7 @@ def main():
             st.subheader("Identification Results")
             if 'error' in result:
                 st.error(result['error'])
+                
             else:
                 st.success(f"""
                 **Identified Plant:**  
