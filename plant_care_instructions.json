@@ -128,5 +128,15 @@
       "Feeding Schedule": "Feed once a month during spring and summer with a balanced indoor plant fertilizer.",
       "Toxicity": "Toxic to humans and pets if ingested.",
       "Additional Care": "Prune as needed to maintain size and shape, avoiding trimming more than 30% at once. Wipe leaves to remove dust and deter pests. Keep away from drafts and sudden temperature changes."
-    }
+    },
+    {
+        "Plant Name": "Asparagus Fern",
+        "Light Requirements": "Grows best in bright indirect light and dappled shade. Keep out of direct sunlight.",
+        "Watering": "Water when 25% of the soil volume is dry. Allow water to drain fully to prevent root rot. Browning or drooping indicates underwatering.",
+        "Humidity Preferences": "Thrives in a humid environment. Regular misting or a pebble tray can help maintain humidity.",
+        "Temperature Range": "60-80°F (16-27°C).",
+        "Feeding Schedule": "Fertilize once a month during spring and summer with an all-purpose fertilizer diluted to half strength.",
+        "Toxicity": "Toxic to humans and pets, especially the berries.",
+        "Additional Care": "Can be propagated by planting its berries or by separating the plant at its roots to replant."
+      }
   ]
