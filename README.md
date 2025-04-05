@@ -1,4 +1,4 @@
-🌿 Smart Plant Identifier + Care Companion
+##🌿 Smart Plant Identifier + Care Companion
 
 
 
