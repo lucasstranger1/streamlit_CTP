@@ -58,49 +58,32 @@ def load_plant_care_data():
         return []
 
 def process_uploaded_image(uploaded_file, plantnet, plant_care_data):
-    """Display larger image with improved layout"""
+    """Handle the image upload and processing pipeline."""
     try:
+        # Display uploaded image
         with st.spinner("Analyzing your plant..."):
-            # Create two columns (wider image column)
-            img_col, info_col = st.columns([2, 1])  # 2:1 ratio
+            col1, col2 = st.columns([1, 2])
             
-            with img_col:
-                st.markdown("### 🌿 Your Plant Photo")
-                
-                # Display larger image with max width
+            with col1:
                 image = Image.open(uploaded_file)
-                st.image(
-                    image,
-                    use_column_width=True,
-                    caption="Uploaded Image (click to expand)",
-                    output_format="PNG",
-                    width=500  # Initial display width
-                )
-                
-                # Add download button
-                st.download_button(
-                    label="⬇️ Download Full Resolution",
-                    data=uploaded_file.getvalue(),
-                    file_name=f"plant_photo_{datetime.now().strftime('%Y%m%d')}.jpg",
-                    mime="image/jpeg"
-                )
+                st.image(image, use_container_width=True, caption="Your Plant")
 
-            with info_col:
-                # Save to temp file
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-                    tmp.write(uploaded_file.getvalue())
-                    temp_path = tmp.name
-                
-                # Identify plant
-                result = plantnet.identify_plant(temp_path)
-                
+            # Save to temp file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+                tmp.write(uploaded_file.getvalue())
+                temp_path = tmp.name
+
+            # Identify plant
+            result = plantnet.identify_plant(temp_path)
+            
+            with col2:
                 if 'error' in result:
                     st.error(result['error'])
                     return
-                
+
                 display_identification_result(result)
                 handle_care_instructions(result, plant_care_data)
-    
+
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
     finally:
