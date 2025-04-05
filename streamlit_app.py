@@ -52,12 +52,11 @@ def process_uploaded_image(uploaded_file, plantnet, plant_care_data):
     """Handle the image upload and processing pipeline."""
     try:
         # Display uploaded image
+        # Display uploaded image
         with st.spinner("Analyzing your plant..."):
-            col1, col2 = st.columns([1, 2])
-            
-            with col1:
-                image = Image.open(uploaded_file)
-                st.image(image, use_container_width=True, caption="Your Plant")
+            image = Image.open(uploaded_file)
+            st.image(image, use_container_width=True, caption="Your Plant")
+
 
             # Save to temp file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
