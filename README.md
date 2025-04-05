@@ -3,7 +3,9 @@
 Welcome to the **Smart Plant Identifier + Care Companion** — a Streamlit web app that identifies plants using the [PlantNet API](https://my.plantnet.org/) and provides personalized care instructions, complete with personality traits for each plant. It now also supports playful interaction with your plant using an LLM!
 
 ---
-
+## 📸 Preview
+![alt text](image.png)
+![alt text](image-1.png)
 ## 🚀 Features
 
 - 📸 Upload a plant photo and get instant identification.
