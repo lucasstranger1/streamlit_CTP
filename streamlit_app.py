@@ -4,6 +4,7 @@ import os
 import json
 import tempfile
 from fuzzywuzzy import process
+from plant_net import PlantNetAPI
 from plant_chatbot import PlantChatbot
 from dotenv import load_dotenv
 from openai import OpenAI
