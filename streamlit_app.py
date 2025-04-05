@@ -256,41 +256,37 @@ def display_plant_matches(matches, plant_map):
                         st.rerun()
 
 def initialize_chatbot(care_info):
-    """Set up and manage the chatbot interface."""
+    """Initialize and manage the chatbot session"""
     st.divider()
     st.subheader(f"💬 Chat with {care_info['Plant Name']}")
     
-    # Initialize chat history
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+    # Initialize chatbot if not already in session state
+    if "plant_chatbot" not in st.session_state:
         st.session_state.plant_chatbot = PlantChatbot(care_info)
+        st.session_state.chat_history = []
     
-    # Display chat messages
+    # Display chat history
     for message in st.session_state.chat_history:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    # Chat input
+    # Handle new messages
     if prompt := st.chat_input(f"Ask {care_info['Plant Name']}..."):
-        # Add user message to history
+        # Add user message
         st.session_state.chat_history.append({"role": "user", "content": prompt})
-        
-        # Display user message
         with st.chat_message("user"):
             st.markdown(prompt)
         
         # Get bot response
         bot_response = st.session_state.plant_chatbot.respond(prompt)
         
-        # Display bot response
+        # Add and display bot response
+        st.session_state.chat_history.append({"role": "assistant", "content": bot_response})
         with st.chat_message("assistant", avatar="🌿"):
             st.markdown(bot_response)
-        
-        # Add bot response to history
-        st.session_state.chat_history.append({"role": "assistant", "content": bot_response})
     
     # Clear chat button
-    if st.session_state.chat_history and st.button("Clear Chat", key="clear_chat"):
+    if st.button("Clear Chat"):
         st.session_state.chat_history = []
         st.rerun()
 

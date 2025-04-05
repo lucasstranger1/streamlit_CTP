@@ -1,3 +1,18 @@
-fuzzywuzzy==0.18.0
-google-generativeai>=0.3.0
+# Core requirements
+google-generativeai>=0.3.2
 python-dotenv>=1.0.0
+
+# Streamlit and image processing
+streamlit>=1.28.0
+Pillow>=10.0.0
+
+# PlantNet API and HTTP requests
+requests>=2.31.0
+
+# Fuzzy matching
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.12.2  # For faster fuzzywuzzy performance
+
+# Additional utilities
+typing-extensions>=4.7.1  # For type hints support
+tempfile>=0.0.1  # Included in Python stdlib but good to document
