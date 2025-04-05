@@ -261,34 +261,27 @@ def initialize_chatbot(care_info):
     # Custom CSS for chat interface
     st.markdown("""
     <style>
-        # .chat-container {
-        #     border: 1px solid #e6e6e6;
-        #     border-radius: 12px;
-        #     height: 400px;
-        #     overflow-y: auto;
-        #     padding: 16px;
-        #     margin-bottom: 20px;
-        #     background-color: #fafafa;
-        #     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        # }
         .user-message {
             background: #0078d4;
             color: white;
             border-radius: 18px 18px 0 18px;
             padding: 10px 16px;
             margin: 8px 0;
-            max-width: 80%;
-            margin-left: auto;
+            width: fit-content;  /* Adjusts width to content */
+            max-width: 90%;      /* Optional: Prevent extreme stretching */
+            margin-left: auto;   /* Keeps user messages right-aligned */
             word-wrap: break-word;
             animation: fadeIn 0.3s;
         }
+
         .bot-message {
             background: #f3f3f3;
             color: #333;
             border-radius: 18px 18px 18px 0;
             padding: 10px 16px;
             margin: 8px 0;
-            max-width: 80%;
+            width: fit-content;  /* Adjusts width to content */
+            max-width: 90%;      /* Optional: Prevent extreme stretching */
             word-wrap: break-word;
             animation: fadeIn 0.3s;
         }
