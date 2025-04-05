@@ -34,15 +34,6 @@ def main():
     if uploaded_file:
         process_uploaded_image(uploaded_file, plantnet, plant_care_data)
 
-    # Sidebar information
-    with st.sidebar:
-        st.header("About")
-        st.markdown("""
-        This app helps you:
-        - Identify unknown plants
-        - Get care instructions
-        - Chat with your plant's personality
-        """)
 
 def load_plant_care_data():
     """Load plant care instructions from JSON file."""
@@ -267,16 +258,16 @@ def initialize_chatbot(care_info):
     # Custom CSS for chat interface
     st.markdown("""
     <style>
-        .chat-container {
-            border: 1px solid #e6e6e6;
-            border-radius: 12px;
-            height: 400px;
-            overflow-y: auto;
-            padding: 16px;
-            margin-bottom: 20px;
-            background-color: #fafafa;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
+        # .chat-container {
+        #     border: 1px solid #e6e6e6;
+        #     border-radius: 12px;
+        #     height: 400px;
+        #     overflow-y: auto;
+        #     padding: 16px;
+        #     margin-bottom: 20px;
+        #     background-color: #fafafa;
+        #     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        # }
         .user-message {
             background: #0078d4;
             color: white;
