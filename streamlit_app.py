@@ -54,10 +54,14 @@ def load_plant_care_data():
     """Load plant care instructions from JSON file."""
     try:
         with open('plant_care_instructions.json') as f:
-            return json.load(f)
+            data = json.load(f)
+            if not isinstance(data, list):
+                st.error("Invalid data format in care instructions")
+                return []
+            return data
     except Exception as e:
         st.error(f"Failed to load care instructions: {str(e)}")
-        st.stop()
+        return []
 
 def process_plant_photo(uploaded_file, plantnet, plant_care_data):
     """Handle the plant photo processing pipeline."""
@@ -67,7 +71,7 @@ def process_plant_photo(uploaded_file, plantnet, plant_care_data):
             col1, col2 = st.columns([1, 2])
             with col1:
                 image = Image.open(uploaded_file)
-                st.image(image, use_column_width=True, caption="Your Plant")
+                st.image(image, use_container_width=True, caption="Your Plant")
             
             # Save to temp file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
@@ -85,12 +89,12 @@ def process_plant_photo(uploaded_file, plantnet, plant_care_data):
                 display_identification_results(result)
                 care_info = find_care_instructions(result, plant_care_data)
                 
-                if care_info:
+                if care_info and validate_care_info(care_info):
                     display_care_instructions(care_info)
                     initialize_chatbot(care_info)
                 else:
-                    st.warning("No care instructions found for this plant")
-                    suggest_similar_plants(result['scientific_name'], plant_care_data)
+                    st.warning("No complete care instructions found for this plant")
+                    suggest_similar_plants(result.get('scientific_name', ''), plant_care_data)
     
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
@@ -98,20 +102,32 @@ def process_plant_photo(uploaded_file, plantnet, plant_care_data):
         if 'temp_path' in locals() and os.path.exists(temp_path):
             os.remove(temp_path)
 
+def validate_care_info(care_info: dict) -> bool:
+    """Check if care info has required fields."""
+    required_fields = [
+        'Plant Name', 
+        'Light Requirements',
+        'Watering',
+        'Temperature Range',
+        'Toxicity'
+    ]
+    return all(field in care_info for field in required_fields)
+
 def display_identification_results(result):
     """Show plant identification results."""
     st.subheader("🔍 Identification Results")
     
+    confidence = result.get('confidence', 0)
     confidence_color = (
-        "green" if result['confidence'] > 80 
-        else "orange" if result['confidence'] > 50 
+        "green" if confidence > 80 
+        else "orange" if confidence > 50 
         else "red"
     )
     
     st.markdown(f"""
-    - 🧪 **Scientific Name**: {result['scientific_name']}
-    - 🌎 **Common Name**: {result.get('common_name', 'Unknown')}
-    - 🎯 **Confidence**: <span style='color:{confidence_color}'>{result['confidence']}%</span>
+    - 🧪 **Scientific Name**: `{result.get('scientific_name', 'Unknown')}`
+    - 🌎 **Common Name**: `{result.get('common_name', 'Unknown')}`
+    - 🎯 **Confidence**: <span style='color:{confidence_color}'>{confidence}%</span>
     """, unsafe_allow_html=True)
 
 def find_care_instructions(result, plant_care_data):
@@ -123,7 +139,7 @@ def find_care_instructions(result, plant_care_data):
             return care_info
     
     # Fall back to scientific name
-    return search_care_data(result['scientific_name'], plant_care_data)
+    return search_care_data(result.get('scientific_name', ''), plant_care_data)
 
 def search_care_data(plant_name, plant_care_data):
     """Search for plant in care data with flexible matching."""
@@ -134,15 +150,14 @@ def search_care_data(plant_name, plant_care_data):
     
     # Exact match
     for plant in plant_care_data:
-        if plant_name_lower == plant['Plant Name'].lower().strip():
+        if plant_name_lower == plant.get('Plant Name', '').lower().strip():
             return plant
     
     # Partial match
     for plant in plant_care_data:
-        if plant_name_lower in plant['Plant Name'].lower() or plant['Plant Name'].lower() in plant_name_lower:
+        if plant_name_lower in plant.get('Plant Name', '').lower():
             return plant
     
-    # Fuzzy match would go here (using fuzzywuzzy as in your original)
     return None
 
 def display_care_instructions(care_info):
@@ -154,13 +169,13 @@ def display_care_instructions(care_info):
         with cols[0]:
             st.markdown(f"""
             **☀️ Light**  
-            {care_info['Light Requirements']}
+            {care_info.get('Light Requirements', 'Not specified')}
             
             **💧 Water**  
-            {care_info['Watering']}
+            {care_info.get('Watering', 'Not specified')}
             
             **🌡️ Temperature**  
-            {care_info['Temperature Range']}
+            {care_info.get('Temperature Range', 'Not specified')}
             """)
         
         with cols[1]:
@@ -172,10 +187,10 @@ def display_care_instructions(care_info):
             {care_info.get('Feeding Schedule', 'Not specified')}
             
             **⚠️ Toxicity**  
-            {care_info['Toxicity']}
+            {care_info.get('Toxicity', 'Not specified')}
             """)
     
-    if 'Additional Care' in care_info and care_info['Additional Care']:
+    if care_info.get('Additional Care'):
         with st.expander("✨ Pro Tips"):
             st.markdown(care_info['Additional Care'])
 
@@ -220,16 +235,21 @@ def initialize_chatbot(care_info):
 
 def suggest_similar_plants(scientific_name, plant_care_data):
     """Suggest similar plants when exact match isn't found."""
+    if not scientific_name or not plant_care_data:
+        return
+    
     st.info("Try these similar plants:")
     similar_plants = [
         p for p in plant_care_data 
-        if any(word in p['Plant Name'].lower() for word in scientific_name.lower().split()[:2])
+        if isinstance(p, dict) and 
+        any(word in p.get('Plant Name', '').lower() 
+        for word in scientific_name.lower().split()[:2])
     ][:3]
     
     for plant in similar_plants:
-        with st.expander(f"🌿 {plant['Plant Name']}"):
-            st.markdown(f"**Light:** {plant['Light Requirements']}")
-            st.markdown(f"**Water:** {plant['Watering']}")
+        with st.expander(f"🌿 {plant.get('Plant Name', 'Unknown')}"):
+            st.markdown(f"**Light:** {plant.get('Light Requirements', 'Not specified')}")
+            st.markdown(f"**Water:** {plant.get('Watering', 'Not specified')}")
 
 if __name__ == "__main__":
     main()
