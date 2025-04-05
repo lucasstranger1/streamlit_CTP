@@ -283,7 +283,7 @@ def initialize_chatbot(care_info):
             width: fit-content;  /* Adjusts width to content */
             max-width: 90%;      /* Optional: Prevent extreme stretching */
             word-wrap: break-word;
-            animation: fadeIn 0.3s;
+            animation: fadeIn 0.01s;
         }
         .message-meta {
             font-size: 0.75rem;
