@@ -375,7 +375,7 @@ def initialize_chatbot(care_info):
         st.session_state.chat_history.append({
             "role": "assistant",
             "content": bot_response,
-            "time": datetime.now().strftime("%H:%M")  # Consistent format
+            "time": datetime.now(eastern).strftime("%H:%M")  # Consistent format
         })
         
         # Rerun to update
