@@ -9,6 +9,7 @@ from plant_chatbot import PlantChatbot
 from dotenv import load_dotenv
 from openai import OpenAI
 from datetime import datetime
+import pytz
 # Load environment variables
 load_dotenv()
 
@@ -350,9 +351,13 @@ def initialize_chatbot(care_info):
     """, unsafe_allow_html=True)
     
     # Chat input (positioned at bottom)
+    # Chat input (positioned at bottom)
     if prompt := st.chat_input(f"Ask {care_info['Plant Name']}..."):
-        from datetime import datetime
-        timestamp = datetime.now().strftime("%H:%M")
+        # Get current time (with timezone awareness if needed)
+        timestamp = datetime.now().strftime("%H:%M")  # Local time
+        
+        # Alternative (for explicit timezone handling):
+        # timestamp = datetime.now(pytz.timezone('Your/Timezone')).strftime("%H:%M")
         
         # Add user message
         st.session_state.chat_history.append({
@@ -364,11 +369,11 @@ def initialize_chatbot(care_info):
         # Get bot response
         bot_response = st.session_state.plant_chatbot.respond(prompt)
         
-        # Add bot response
+        # Add bot response (with new timestamp)
         st.session_state.chat_history.append({
             "role": "assistant",
             "content": bot_response,
-            "time": datetime.now().strftime("%H:%M")
+            "time": datetime.now().strftime("%H:%M")  # Consistent format
         })
         
         # Rerun to update
