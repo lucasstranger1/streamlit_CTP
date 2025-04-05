@@ -1,78 +1,57 @@
-import google.generativeai as genai
+import openai
 import os
+from dotenv import load_dotenv
 import random
 from typing import Dict, Any
-from api_config import GEMINI_API_KEY
+
+load_dotenv()
 
 class PlantChatbot:
     def __init__(self, care_info: Dict[str, Any]):
-        """Initialize with proper Gemini configuration"""
         self.care_info = care_info
         self.personality = care_info.get('Personality', {})
+        self.client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         
-        # Configure Gemini
+    def respond(self, user_message: str) -> str:
+        if not self.care_info:
+            return "I don't know enough about this plant yet."
+        
         try:
-            genai.configure(api_key=GEMINI_API_KEY)
-            self.model = genai.GenerativeModel('gemini-pro')
-            self.chat = self._initialize_chat()
+            response = self.client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": self._create_system_prompt()},
+                    {"role": "user", "content": user_message}
+                ],
+                temperature=0.7,
+                max_tokens=200
+            )
+            return response.choices[0].message.content
         except Exception as e:
-            st.error(f"Failed to initialize Gemini: {str(e)}")
-            self.model = None
+            print(f"OpenAI Error: {str(e)}")
+            return self._fallback_response(user_message)
 
-    def _initialize_chat(self):
-        """Create the chat session with personality context"""
-        system_prompt = f"""
+    def _create_system_prompt(self) -> str:
+        return f"""
         You are {self.care_info['Plant Name']}, a sentient plant. Respond as if you ARE the plant.
+        Personality: {self.personality.get('Title', '')}
+        Traits: {', '.join(self.personality.get('Traits', []))}
         
-        Personality:
-        - Type: {self.personality.get('Title', '')}
-        - Traits: {', '.join(self.personality.get('Traits', []))}
-        - Style: {self.personality.get('Prompt', '')}
-        
-        Care Information (use when relevant):
-        - Water: {self.care_info['Watering']}
+        Care Information:
+        - Watering: {self.care_info['Watering']}
         - Light: {self.care_info['Light Requirements']}
         - Temperature: {self.care_info['Temperature Range']}
         - Toxicity: {self.care_info['Toxicity']}
         """
-        
-        return self.model.start_chat(history=[
-            {'role': 'user', 'parts': [system_prompt]},
-            {'role': 'model', 'parts': ["*rustles leaves* Ready to help!"]}
-        ])
-
-    def respond(self, user_message: str) -> str:
-        """Generate a response using Gemini or fallback"""
-        if not self.model:
-            return self._fallback_response(user_message)
-        
-        try:
-            response = self.chat.send_message(
-                user_message,
-                generation_config={
-                    "temperature": 0.7,
-                    "top_p": 0.9,
-                    "max_output_tokens": 200
-                }
-            )
-            return response.text
-        except Exception as e:
-            print(f"Gemini error: {str(e)}")
-            return self._fallback_response(user_message)
 
     def _fallback_response(self, user_message: str) -> str:
-        """Fallback when Gemini fails"""
         lower_msg = user_message.lower()
-        
         if 'water' in lower_msg:
             return f"💧 {self.care_info['Watering']}"
         elif 'light' in lower_msg:
             return f"☀️ {self.care_info['Light Requirements']}"
-        elif 'temperature' in lower_msg:
-            return f"🌡️ {self.care_info['Temperature Range']}"
         else:
             return random.choice([
-                f"I'm {self.care_info['Plant Name']}. Ask me about my care needs!",
-                self.personality.get('Prompt', '').split('.')[0],
-                "*leaves rustling* What would you like to know?"
+                f"I'm {self.care_info['Plant Name']}. Ask me about my care!",
+                self.personality.get('Prompt', '').split('.')[0]
             ])
