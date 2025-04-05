@@ -56,7 +56,12 @@ def process_uploaded_image(uploaded_file, plantnet, plant_care_data):
         with st.spinner("Analyzing your plant..."):
             image = Image.open(uploaded_file)
             st.image(image, use_container_width=True, caption="Your Plant")
-
+        with st.spinner("Analyzing your plant..."):
+            col1 = st.columns([1])
+            col2 = st.columns([2])
+            with col1:
+                image = Image.open(uploaded_file)
+                st.image(image, use_container_width=True, caption="Your Plant")
 
             # Save to temp file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
