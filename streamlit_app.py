@@ -51,17 +51,11 @@ def load_plant_care_data():
 def process_uploaded_image(uploaded_file, plantnet, plant_care_data):
     """Handle the image upload and processing pipeline."""
     try:
-        # Display uploaded image
-        # Display uploaded image
+        # Display uploaded image in one row
         with st.spinner("Analyzing your plant..."):
+            # Row 1: Image
             image = Image.open(uploaded_file)
-            st.image(image, use_container_width=True, caption="Your Plant")
-        with st.spinner("Analyzing your plant..."):
-            col1 = st.columns([1])
-            col2 = st.columns([2])
-            with col1:
-                image = Image.open(uploaded_file)
-                st.image(image, use_container_width=True, caption="Your Plant")
+            st.image(image, use_column_width=True, caption="Your Plant")
 
             # Save to temp file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
@@ -71,20 +65,19 @@ def process_uploaded_image(uploaded_file, plantnet, plant_care_data):
             # Identify plant
             result = plantnet.identify_plant(temp_path)
             
-            with col2:
-                if 'error' in result:
-                    st.error(result['error'])
-                    return
+            # Row 2: Results & Care Instructions
+            if 'error' in result:
+                st.error(result['error'])
+                return
 
-                display_identification_result(result)
-                handle_care_instructions(result, plant_care_data)
+            display_identification_result(result)  # Show plant name, confidence, etc.
+            handle_care_instructions(result, plant_care_data)  # Show care tips
 
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
     finally:
         if 'temp_path' in locals() and os.path.exists(temp_path):
             os.remove(temp_path)
-
 def display_identification_result(result):
     """Display the plant identification results."""
     st.subheader("🔍 Identification Results")
