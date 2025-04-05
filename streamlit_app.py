@@ -8,6 +8,7 @@ from plant_net import PlantNetAPI
 from plant_chatbot import PlantChatbot
 from dotenv import load_dotenv
 from openai import OpenAI
+from datetime import datetime
 # Load environment variables
 load_dotenv()
 
