@@ -256,37 +256,111 @@ def display_plant_matches(matches, plant_map):
                         st.rerun()
 
 def initialize_chatbot(care_info):
-    """Initialize and manage the chatbot session"""
-    st.divider()
+    """Enhanced chatbot with fixed history window"""
     st.subheader(f"💬 Chat with {care_info['Plant Name']}")
     
-    # Initialize chatbot if not already in session state
-    if "plant_chatbot" not in st.session_state:
-        st.session_state.plant_chatbot = PlantChatbot(care_info)
+    # Initialize session state
+    if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
+        st.session_state.plant_chatbot = PlantChatbot(care_info)
     
-    # Display chat history
-    for message in st.session_state.chat_history:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    # CSS for fixed chat window
+    st.markdown("""
+    <style>
+        .fixed-chat {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            padding: 8px 12px;
+            border-radius: 18px 18px 0 18px;
+            margin: 5px 0;
+            max-width: 80%;
+            margin-left: auto;
+        }
+        .bot-message {
+            background-color: #f1f1f1;
+            padding: 8px 12px;
+            border-radius: 18px 18px 18px 0;
+            margin: 5px 0;
+            max-width: 80%;
+        }
+        .message-time {
+            font-size: 0.7em;
+            color: #666;
+            margin-top: 2px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     
-    # Handle new messages
+    # Fixed chat history container
+    with st.container():
+        st.markdown('<div class="fixed-chat">', unsafe_allow_html=True)
+        
+        for message in st.session_state.chat_history:
+            if message["role"] == "user":
+                st.markdown(
+                    f'<div class="user-message">'
+                    f'👤 <strong>You</strong><br>{message["content"]}'
+                    f'<div class="message-time">{message["time"]}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    f'<div class="bot-message">'
+                    f'🌿 <strong>{care_info["Plant Name"]}</strong><br>{message["content"]}'
+                    f'<div class="message-time">{message["time"]}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Input at bottom (always visible)
     if prompt := st.chat_input(f"Ask {care_info['Plant Name']}..."):
-        # Add user message
-        st.session_state.chat_history.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
+        # Add timestamp to message
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%H:%M")
+        
+        # Add user message to history
+        st.session_state.chat_history.append({
+            "role": "user",
+            "content": prompt,
+            "time": timestamp
+        })
         
         # Get bot response
         bot_response = st.session_state.plant_chatbot.respond(prompt)
         
-        # Add and display bot response
-        st.session_state.chat_history.append({"role": "assistant", "content": bot_response})
-        with st.chat_message("assistant", avatar="🌿"):
-            st.markdown(bot_response)
+        # Add bot response to history
+        st.session_state.chat_history.append({
+            "role": "assistant",
+            "content": bot_response,
+            "time": datetime.now().strftime("%H:%M")
+        })
+        
+        # Rerun to update display
+        st.rerun()
     
-    # Clear chat button
-    if st.button("Clear Chat"):
+    # Clear chat button (bottom right)
+    st.markdown("""
+    <style>
+        .clear-btn {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    if st.button("🧹 Clear Chat", key="clear_chat"):
         st.session_state.chat_history = []
         st.rerun()
 
