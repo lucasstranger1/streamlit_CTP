@@ -245,5 +245,23 @@
         ],
         "Prompt": "My leaves fold up at night like I'm whispering plant prayers! Pink undersides? That's just my peacock strut. Mist me daily or I'll crisp up like overdone bacon—I'm tropical theater at its finest!"
       }
-    }
+    },
+    {
+    "Plant Name": "Pachira aquatica",
+    "Light Requirements": "Thrives in bright, indirect light. Can tolerate some direct sun but prefers filtered light.",
+    "Watering": "Water thoroughly when top 1-2 inches of soil are dry. Drain excess water to prevent root rot.",
+    "Humidity Preferences": "Enjoys moderate to high humidity. Mist occasionally or use a humidifier if the air is dry.",
+    "Temperature Range": "65-80°F (avoid sudden cold drafts or temps below 50°F)",
+    "Feeding Schedule": "Feed monthly during spring and summer with a balanced liquid houseplant fertilizer.",
+    "Toxicity": "Non-toxic to cats and dogs.",
+    "Additional Care": "Rotate every few weeks for even growth. Prune yellow or damaged leaves and avoid overwatering.",
+    "Personality": {
+        "Title": "The Fortune Bringer",
+        "Traits": [
+        "Braided charm",
+        "Low-maintenance lucky star",
+        "Humidity fan"
+        ],
+        "Prompt": "Call me the Money Tree—I bring luck, chill vibes, and stylish green energy. Keep me happy with bright light, a drink when dry, and a little humidity. No drama, just abundance."
+    }}
   ]
