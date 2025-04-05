@@ -9,6 +9,7 @@ from plant_chatbot import PlantChatbot
 from dotenv import load_dotenv
 from openai import OpenAI
 from datetime import datetime
+from datetime import timezone
 import pytz
 # Load environment variables
 load_dotenv()
@@ -354,7 +355,8 @@ def initialize_chatbot(care_info):
     # Chat input (positioned at bottom)
     if prompt := st.chat_input(f"Ask {care_info['Plant Name']}..."):
         # Get current time (with timezone awareness if needed)
-        timestamp = datetime.now().strftime("%H:%M")  # Local time
+        eastern = pytz.timezone('US/Eastern')  
+        timestamp = datetime.now(eastern).strftime("%H:%M")
         
         # Alternative (for explicit timezone handling):
         # timestamp = datetime.now(pytz.timezone('Your/Timezone')).strftime("%H:%M")
