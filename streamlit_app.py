@@ -256,7 +256,7 @@ def display_plant_matches(matches, plant_map):
                         st.rerun()
 
 def initialize_chatbot(care_info):
-    """Enhanced chatbot with fixed history window"""
+    """Modern chatbot with proper message containment"""
     st.subheader(f"💬 Chat with {care_info['Plant Name']}")
     
     # Initialize session state
@@ -264,72 +264,105 @@ def initialize_chatbot(care_info):
         st.session_state.chat_history = []
         st.session_state.plant_chatbot = PlantChatbot(care_info)
     
-    # CSS for fixed chat window
+    # Custom CSS for chat interface
     st.markdown("""
     <style>
-        .fixed-chat {
+        .chat-container {
+            border: 1px solid #e6e6e6;
+            border-radius: 12px;
             height: 400px;
             overflow-y: auto;
-            border: 1px solid #e1e4e8;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            background-color: #f9f9f9;
+            padding: 16px;
+            margin-bottom: 20px;
+            background-color: #fafafa;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
         .user-message {
-            background-color: #e3f2fd;
-            padding: 8px 12px;
+            background: #0078d4;
+            color: white;
             border-radius: 18px 18px 0 18px;
-            margin: 5px 0;
+            padding: 10px 16px;
+            margin: 8px 0;
             max-width: 80%;
             margin-left: auto;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s;
         }
         .bot-message {
-            background-color: #f1f1f1;
-            padding: 8px 12px;
+            background: #f3f3f3;
+            color: #333;
             border-radius: 18px 18px 18px 0;
-            margin: 5px 0;
+            padding: 10px 16px;
+            margin: 8px 0;
             max-width: 80%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s;
         }
-        .message-time {
-            font-size: 0.7em;
-            color: #666;
-            margin-top: 2px;
+        .message-meta {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stChatInput {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 800px;
+            z-index: 100;
+        }
+        .stButton>button {
+            border-radius: 20px;
+            padding: 8px 16px;
         }
     </style>
     """, unsafe_allow_html=True)
     
-    # Fixed chat history container
+    # Chat container
     with st.container():
-        st.markdown('<div class="fixed-chat">', unsafe_allow_html=True)
+        st.markdown('<div class="chat-container" id="chat-window">', unsafe_allow_html=True)
         
         for message in st.session_state.chat_history:
             if message["role"] == "user":
                 st.markdown(
                     f'<div class="user-message">'
-                    f'👤 <strong>You</strong><br>{message["content"]}'
-                    f'<div class="message-time">{message["time"]}</div>'
-                    f'</div>',
+                    f'{message["content"]}'
+                    f'<div class="message-meta">You • {message["time"]}</div>'
+                    f'</div>', 
                     unsafe_allow_html=True
                 )
             else:
                 st.markdown(
                     f'<div class="bot-message">'
-                    f'🌿 <strong>{care_info["Plant Name"]}</strong><br>{message["content"]}'
-                    f'<div class="message-time">{message["time"]}</div>'
+                    f'🌿 {message["content"]}'
+                    f'<div class="message-meta">{care_info["Plant Name"]} • {message["time"]}</div>'
                     f'</div>',
                     unsafe_allow_html=True
                 )
         
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Input at bottom (always visible)
+    # Auto-scroll to bottom
+    st.markdown("""
+    <script>
+        window.addEventListener('load', function() {
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        });
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # Chat input (positioned at bottom)
     if prompt := st.chat_input(f"Ask {care_info['Plant Name']}..."):
-        # Add timestamp to message
         from datetime import datetime
         timestamp = datetime.now().strftime("%H:%M")
         
-        # Add user message to history
+        # Add user message
         st.session_state.chat_history.append({
             "role": "user",
             "content": prompt,
@@ -339,28 +372,18 @@ def initialize_chatbot(care_info):
         # Get bot response
         bot_response = st.session_state.plant_chatbot.respond(prompt)
         
-        # Add bot response to history
+        # Add bot response
         st.session_state.chat_history.append({
             "role": "assistant",
             "content": bot_response,
             "time": datetime.now().strftime("%H:%M")
         })
         
-        # Rerun to update display
+        # Rerun to update
         st.rerun()
     
-    # Clear chat button (bottom right)
-    st.markdown("""
-    <style>
-        .clear-btn {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    if st.button("🧹 Clear Chat", key="clear_chat"):
+    # Clear button (floating)
+    if st.button("Clear Chat", key="clear_chat"):
         st.session_state.chat_history = []
         st.rerun()
 
