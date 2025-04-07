@@ -262,8 +262,9 @@ def display_plant_matches(matches, plant_map):
 def initialize_chatbot(care_info):
     """Modern chatbot with proper message containment"""
     st.subheader(f"💬 Chat with {care_info['Plant Name']}")
-        # Always reinitialize the chatbot with current plant info
-    st.session_state.plant_chatbot = PlantChatbot(care_info)
+    # Initialize chatbot if not exists
+    if "plant_chatbot" not in st.session_state:
+        st.session_state.plant_chatbot = PlantChatbot(care_info)
     # Initialize session state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
@@ -321,7 +322,7 @@ def initialize_chatbot(care_info):
     </style>
     """, unsafe_allow_html=True)
     
-    # Chat container
+    # Display chat history
     with st.container():
         st.markdown('<div class="chat-container" id="chat-window">', unsafe_allow_html=True)
         
@@ -345,25 +346,10 @@ def initialize_chatbot(care_info):
         
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Auto-scroll to bottom
-    st.markdown("""
-    <script>
-        window.addEventListener('load', function() {
-            const chatWindow = document.getElementById('chat-window');
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        });
-    </script>
-    """, unsafe_allow_html=True)
-    
-    # Chat input (positioned at bottom)
-    # Chat input (positioned at bottom)
+    # Chat input handling
     if prompt := st.chat_input(f"Ask {care_info['Plant Name']}..."):
-        # Get current time (with timezone awareness if needed)
         eastern = pytz.timezone('US/Eastern')  
         timestamp = datetime.now(eastern).strftime("%H:%M")
-        
-        # Alternative (for explicit timezone handling):
-        # timestamp = datetime.now(pytz.timezone('Your/Timezone')).strftime("%H:%M")
         
         # Add user message
         st.session_state.chat_history.append({
@@ -375,17 +361,17 @@ def initialize_chatbot(care_info):
         # Get bot response
         bot_response = st.session_state.plant_chatbot.respond(prompt)
         
-        # Add bot response (with new timestamp)
+        # Add bot response
         st.session_state.chat_history.append({
             "role": "assistant",
             "content": bot_response,
-            "time": datetime.now(eastern).strftime("%H:%M")  # Consistent format
+            "time": datetime.now(eastern).strftime("%H:%M")
         })
         
         # Rerun to update
         st.rerun()
     
-    # Clear button (floating)
+    # Clear button
     if st.button("Clear Chat", key="clear_chat"):
         st.session_state.chat_history = []
         st.rerun()
