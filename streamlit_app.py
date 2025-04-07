@@ -55,7 +55,7 @@ def process_uploaded_image(uploaded_file, plantnet, plant_care_data):
     """Handle the image upload and processing pipeline."""
     try:
         with st.spinner("Analyzing your plant..."):
-                        # Clear previous chat if exists
+             # Clear previous chat if exists
             if "chat_history" in st.session_state:
                 del st.session_state.chat_history
             if "plant_chatbot" in st.session_state:
@@ -262,19 +262,66 @@ def display_plant_matches(matches, plant_map):
 def initialize_chatbot(care_info):
     """Modern chatbot with proper message containment"""
     st.subheader(f"💬 Chat with {care_info['Plant Name']}")
-    
-    # Initialize chatbot if not exists
-    if "plant_chatbot" not in st.session_state:
-        st.session_state.plant_chatbot = PlantChatbot(care_info)
-    
-    # Initialize chat history if not exists
+        # Always reinitialize the chatbot with current plant info
+    st.session_state.plant_chatbot = PlantChatbot(care_info)
+    # Initialize session state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
+        st.session_state.plant_chatbot = PlantChatbot(care_info)
     
-    # Rest of your existing CSS and container code...
-    # [Keep all your existing CSS and container setup code]
+    # Custom CSS for chat interface
+    st.markdown("""
+    <style>
+        .user-message {
+            background: #0078d4;
+            color: white;
+            border-radius: 18px 18px 0 18px;
+            padding: 10px 16px;
+            margin: 8px 0;
+            width: fit-content;  /* Adjusts width to content */
+            max-width: 90%;      /* Optional: Prevent extreme stretching */
+            margin-left: auto;   /* Keeps user messages right-aligned */
+            word-wrap: break-word;
+            animation: fadeIn 0.3s;
+        }
+
+        .bot-message {
+            background: #f3f3f3;
+            color: #333;
+            border-radius: 18px 18px 18px 0;
+            padding: 10px 16px;
+            margin: 8px 0;
+            width: fit-content;  /* Adjusts width to content */
+            max-width: 90%;      /* Optional: Prevent extreme stretching */
+            word-wrap: break-word;
+            animation: fadeIn 0.01s;
+        }
+        .message-meta {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stChatInput {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 800px;
+            z-index: 100;
+        }
+        .stButton>button {
+            border-radius: 20px;
+            padding: 8px 16px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
     
-    # Display chat history
+    # Chat container
     with st.container():
         st.markdown('<div class="chat-container" id="chat-window">', unsafe_allow_html=True)
         
@@ -298,10 +345,25 @@ def initialize_chatbot(care_info):
         
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Chat input handling
+    # Auto-scroll to bottom
+    st.markdown("""
+    <script>
+        window.addEventListener('load', function() {
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        });
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # Chat input (positioned at bottom)
+    # Chat input (positioned at bottom)
     if prompt := st.chat_input(f"Ask {care_info['Plant Name']}..."):
+        # Get current time (with timezone awareness if needed)
         eastern = pytz.timezone('US/Eastern')  
         timestamp = datetime.now(eastern).strftime("%H:%M")
+        
+        # Alternative (for explicit timezone handling):
+        # timestamp = datetime.now(pytz.timezone('Your/Timezone')).strftime("%H:%M")
         
         # Add user message
         st.session_state.chat_history.append({
@@ -313,17 +375,17 @@ def initialize_chatbot(care_info):
         # Get bot response
         bot_response = st.session_state.plant_chatbot.respond(prompt)
         
-        # Add bot response
+        # Add bot response (with new timestamp)
         st.session_state.chat_history.append({
             "role": "assistant",
             "content": bot_response,
-            "time": datetime.now(eastern).strftime("%H:%M")
+            "time": datetime.now(eastern).strftime("%H:%M")  # Consistent format
         })
         
         # Rerun to update
         st.rerun()
     
-    # Clear button
+    # Clear button (floating)
     if st.button("Clear Chat", key="clear_chat"):
         st.session_state.chat_history = []
         st.rerun()
