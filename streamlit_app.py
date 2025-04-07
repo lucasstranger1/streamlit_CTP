@@ -31,7 +31,7 @@ def main():
     # File uploader
     uploaded_file = st.file_uploader(
         "Choose a plant image (leaves, flowers, or fruits work best)",
-        type=["jpg", "jpeg", "png"]
+        type=["jpg", "jpeg", "png"],
         key="plant_uploader" # Add a key to help Streamlit track the widget state
     )
 
