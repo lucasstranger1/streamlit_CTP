@@ -55,11 +55,6 @@ def process_uploaded_image(uploaded_file, plantnet, plant_care_data):
     """Handle the image upload and processing pipeline."""
     try:
         with st.spinner("Analyzing your plant..."):
-             # Clear previous chat if exists
-            if "chat_history" in st.session_state:
-                del st.session_state.chat_history
-            if "plant_chatbot" in st.session_state:
-                del st.session_state.plant_chatbot
             # Row 1: Display the uploaded image (full width)
             image = Image.open(uploaded_file)
             st.image(
@@ -104,11 +99,6 @@ def display_identification_result(result):
 
 def handle_care_instructions(result, plant_care_data):
     """Find and display care instructions for the identified plant."""
-        # Clear previous chatbot if exists
-    if "plant_chatbot" in st.session_state:
-        del st.session_state.plant_chatbot
-    if "chat_history" in st.session_state:
-        del st.session_state.chat_history
     # Try scientific name first, then common name
     care_info = find_care_instructions(result['scientific_name'], plant_care_data)
     if not care_info and result.get('common_name'):
@@ -259,54 +249,135 @@ def display_plant_matches(matches, plant_map):
                         initialize_chatbot(plant)
                         st.rerun()
 
-def initialize_chatbot(plants_data: dict):
-    st.title("🪴 Chat with Your Plant!")
-
-    # Plant selection
-    plant_names = list(plants_data.keys())
-    selected_plant_name = st.selectbox("Choose a plant to chat with:", plant_names)
-
-    # Store selected plant name
-    st.session_state.selected_plant_name = selected_plant_name
-
-    # Load care info
-    selected_care_info = plants_data[selected_plant_name]
-    selected_care_info["Plant Name"] = selected_plant_name
-
-    # Initialize chatbot only once
-    if "plant_chatbot" not in st.session_state:
-        st.session_state.plant_chatbot = PlantChatbot(selected_care_info)
+def initialize_chatbot(care_info):
+    """Modern chatbot with proper message containment"""
+    st.subheader(f"💬 Chat with {care_info['Plant Name']}")
+    
+    # Initialize session state
+    if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
+        st.session_state.plant_chatbot = PlantChatbot(care_info)
+    
+    # Custom CSS for chat interface
+    st.markdown("""
+    <style>
+        .user-message {
+            background: #0078d4;
+            color: white;
+            border-radius: 18px 18px 0 18px;
+            padding: 10px 16px;
+            margin: 8px 0;
+            width: fit-content;  /* Adjusts width to content */
+            max-width: 90%;      /* Optional: Prevent extreme stretching */
+            margin-left: auto;   /* Keeps user messages right-aligned */
+            word-wrap: break-word;
+            animation: fadeIn 0.3s;
+        }
 
-    # Handle user input
-    prompt = st.chat_input(f"Talk to {selected_plant_name}...")
-
-    if prompt:
-        timestamp = datetime.now(pytz.timezone("US/Eastern")).strftime("%I:%M %p")
-
+        .bot-message {
+            background: #f3f3f3;
+            color: #333;
+            border-radius: 18px 18px 18px 0;
+            padding: 10px 16px;
+            margin: 8px 0;
+            width: fit-content;  /* Adjusts width to content */
+            max-width: 90%;      /* Optional: Prevent extreme stretching */
+            word-wrap: break-word;
+            animation: fadeIn 0.01s;
+        }
+        .message-meta {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .stChatInput {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 800px;
+            z-index: 100;
+        }
+        .stButton>button {
+            border-radius: 20px;
+            padding: 8px 16px;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Chat container
+    with st.container():
+        st.markdown('<div class="chat-container" id="chat-window">', unsafe_allow_html=True)
+        
+        for message in st.session_state.chat_history:
+            if message["role"] == "user":
+                st.markdown(
+                    f'<div class="user-message">'
+                    f'{message["content"]}'
+                    f'<div class="message-meta">You • {message["time"]}</div>'
+                    f'</div>', 
+                    unsafe_allow_html=True
+                )
+            else:
+                st.markdown(
+                    f'<div class="bot-message">'
+                    f'🌿 {message["content"]}'
+                    f'<div class="message-meta">{care_info["Plant Name"]} • {message["time"]}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Auto-scroll to bottom
+    st.markdown("""
+    <script>
+        window.addEventListener('load', function() {
+            const chatWindow = document.getElementById('chat-window');
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        });
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # Chat input (positioned at bottom)
+    # Chat input (positioned at bottom)
+    if prompt := st.chat_input(f"Ask {care_info['Plant Name']}..."):
+        # Get current time (with timezone awareness if needed)
+        eastern = pytz.timezone('US/Eastern')  
+        timestamp = datetime.now(eastern).strftime("%H:%M")
+        
+        # Alternative (for explicit timezone handling):
+        # timestamp = datetime.now(pytz.timezone('Your/Timezone')).strftime("%H:%M")
+        
         # Add user message
         st.session_state.chat_history.append({
             "role": "user",
             "content": prompt,
             "time": timestamp
         })
-
-        # Get plant's response
-        bot_reply = st.session_state.plant_chatbot.respond(prompt)
-
-        # Add bot response
+        
+        # Get bot response
+        bot_response = st.session_state.plant_chatbot.respond(prompt)
+        
+        # Add bot response (with new timestamp)
         st.session_state.chat_history.append({
-            "role": "bot",
-            "content": bot_reply,
-            "time": timestamp
+            "role": "assistant",
+            "content": bot_response,
+            "time": datetime.now(eastern).strftime("%H:%M")  # Consistent format
         })
-
-    # Display chat history
-    for msg in st.session_state.chat_history:
-        if msg["role"] == "user":
-            st.markdown(f"🧑‍🌾 **You** ({msg['time']}): {msg['content']}")
-        else:
-            st.markdown(f"🌱 **{selected_plant_name}** ({msg['time']}): {msg['content']}")
+        
+        # Rerun to update
+        st.rerun()
+    
+    # Clear button (floating)
+    if st.button("Clear Chat", key="clear_chat"):
+        st.session_state.chat_history = []
+        st.rerun()
 
 if __name__ == "__main__":
     main()
