@@ -55,6 +55,11 @@ def process_uploaded_image(uploaded_file, plantnet, plant_care_data):
     """Handle the image upload and processing pipeline."""
     try:
         with st.spinner("Analyzing your plant..."):
+                        # Clear previous chat if exists
+            if "chat_history" in st.session_state:
+                del st.session_state.chat_history
+            if "plant_chatbot" in st.session_state:
+                del st.session_state.plant_chatbot
             # Row 1: Display the uploaded image (full width)
             image = Image.open(uploaded_file)
             st.image(
@@ -99,6 +104,11 @@ def display_identification_result(result):
 
 def handle_care_instructions(result, plant_care_data):
     """Find and display care instructions for the identified plant."""
+        # Clear previous chatbot if exists
+    if "plant_chatbot" in st.session_state:
+        del st.session_state.plant_chatbot
+    if "chat_history" in st.session_state:
+        del st.session_state.chat_history
     # Try scientific name first, then common name
     care_info = find_care_instructions(result['scientific_name'], plant_care_data)
     if not care_info and result.get('common_name'):
@@ -252,7 +262,8 @@ def display_plant_matches(matches, plant_map):
 def initialize_chatbot(care_info):
     """Modern chatbot with proper message containment"""
     st.subheader(f"💬 Chat with {care_info['Plant Name']}")
-    
+        # Always reinitialize the chatbot with current plant info
+    st.session_state.plant_chatbot = PlantChatbot(care_info)
     # Initialize session state
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
