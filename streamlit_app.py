@@ -32,9 +32,25 @@ def main():
     uploaded_file = st.file_uploader(
         "Choose a plant image (leaves, flowers, or fruits work best)",
         type=["jpg", "jpeg", "png"]
+        key="plant_uploader" # Add a key to help Streamlit track the widget state
     )
 
-    if uploaded_file:
+    # --- State Management for Selected Plant ---
+    # Check if a plant was selected from suggestions in the *previous* run
+    if "selected_plant_care_info" in st.session_state:
+        selected_care_info = st.session_state.pop("selected_plant_care_info") # Get and remove
+        # Display info and initialize chat for the selected plant
+        display_care_instructions(selected_care_info)
+        initialize_chatbot(selected_care_info) # This will now correctly initialize/reset
+        st.stop() # Stop further processing for this run (don't re-process uploaded file)
+    # --- End State Management ---
+
+
+    if uploaded_file is not None:
+        # Clear previous selection state if a new file is uploaded
+        if "selected_plant_care_info" in st.session_state:
+            del st.session_state.selected_plant_care_info
+
         process_uploaded_image(uploaded_file, plantnet, plant_care_data)
 
 
@@ -53,16 +69,17 @@ def load_plant_care_data():
 
 def process_uploaded_image(uploaded_file, plantnet, plant_care_data):
     """Handle the image upload and processing pipeline."""
+    # Display the image first
+    try:
+        image = Image.open(uploaded_file)
+        st.image(image, use_container_width=True, caption="Your Plant")
+    except Exception as e:
+        st.error(f"Error opening image: {e}")
+        return # Don't proceed if image can't be opened
+
+    # Process the image
     try:
         with st.spinner("Analyzing your plant..."):
-            # Row 1: Display the uploaded image (full width)
-            image = Image.open(uploaded_file)
-            st.image(
-                image,
-                use_container_width=True,  # <-- FIXED: Replaced use_column_width
-                caption="Your Plant"
-            )
-
             # Save to temp file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
                 tmp.write(uploaded_file.getvalue())
@@ -71,19 +88,23 @@ def process_uploaded_image(uploaded_file, plantnet, plant_care_data):
             # Identify plant
             result = plantnet.identify_plant(temp_path)
 
-            # Row 2: Display results & care instructions
+            # Display results & handle care/chat
             if 'error' in result:
-                st.error(result['error'])
+                st.error(f"PlantNet API Error: {result['error']}")
                 return
 
             display_identification_result(result)
-            handle_care_instructions(result, plant_care_data)
+            handle_care_instructions(result, plant_care_data) # This function now calls initialize_chatbot
 
     except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+        st.error(f"An error occurred during processing: {str(e)}")
     finally:
+        # Ensure temp file is removed
         if 'temp_path' in locals() and os.path.exists(temp_path):
-            os.remove(temp_path)
+            try:
+                os.remove(temp_path)
+            except Exception as e:
+                st.warning(f"Could not remove temp file {temp_path}: {e}")
 def display_identification_result(result):
     """Display the plant identification results."""
     st.subheader("🔍 Identification Results")
@@ -98,18 +119,32 @@ def display_identification_result(result):
     """, unsafe_allow_html=True)
 
 def handle_care_instructions(result, plant_care_data):
-    """Find and display care instructions for the identified plant."""
-    # Try scientific name first, then common name
-    care_info = find_care_instructions(result['scientific_name'], plant_care_data)
-    if not care_info and result.get('common_name'):
-        care_info = find_care_instructions(result['common_name'], plant_care_data)
+    """Find care instructions, display them, and initialize chat OR suggest alternatives."""
+    plant_name_sci = result.get('scientific_name')
+    plant_name_common = result.get('common_name')
+
+    care_info = find_care_instructions(plant_name_sci, plant_care_data)
+    if not care_info and plant_name_common:
+        care_info = find_care_instructions(plant_name_common, plant_care_data)
 
     if care_info:
+        # Found direct match - display and initialize/reset chat
         display_care_instructions(care_info)
-        initialize_chatbot(care_info)
+        initialize_chatbot(care_info) # Call the modified function
     else:
-        st.warning("No complete care instructions found for this plant")
-        suggest_similar_plants(result, plant_care_data)
+        # No direct match found
+        st.warning("No complete care instructions found matching the identification.")
+        # --- IMPORTANT: Clear any *existing* chat state from a *previous* plant ---
+        if "current_chatbot_plant_name" in st.session_state:
+            # st.write("DEBUG: Clearing chat state due to no match found.") # Optional debug
+            del st.session_state.current_chatbot_plant_name
+        if "plant_chatbot" in st.session_state:
+            del st.session_state.plant_chatbot
+        if "chat_history" in st.session_state:
+            del st.session_state.chat_history
+        # --- End clearing logic ---
+
+        suggest_similar_plants(result, plant_care_data) # Show suggestions
 
 def find_care_instructions(plant_name, care_data):
     """Find care instructions using exact, partial, and fuzzy matching."""
@@ -187,36 +222,50 @@ def display_care_instructions(care_info):
             st.markdown(care_info['Additional Care'])
 
 def suggest_similar_plants(result, plant_care_data):
-    """Suggest similar plants when exact match isn't found."""
-    st.info("🌿 Try these similar plants:")
-    
-    # Create list of all plant names for matching
+    """Suggest similar plants and allow selection."""
+    st.info("🌿 Perhaps one of these is similar?")
+
     all_plant_names = []
     plant_map = {}
     for plant in plant_care_data:
-        name = plant.get('Plant Name', '').lower().strip()
+        name = plant.get('Plant Name', '').strip()
         if name:
-            all_plant_names.append(name)
-            plant_map[name] = plant
-    
-    # Find matches for scientific name
+            lower_name = name.lower()
+            all_plant_names.append(lower_name)
+            plant_map[lower_name] = plant
+
+    if not all_plant_names:
+        st.warning("No plant names available in care data for suggestions.")
+        return
+
+    matches_to_display = []
+    processed_names = set() # To avoid duplicates
+
+    # Get matches for scientific name
     if result.get('scientific_name'):
-        matches = process.extract(
-            result['scientific_name'].lower(), 
-            all_plant_names, 
-            limit=3
-        )
-        display_plant_matches(matches, plant_map)
-    
-    # Find matches for common name if no scientific matches
-    if result.get('common_name') and not st.session_state.get('shown_suggestions'):
-        matches = process.extract(
-            result['common_name'].lower(), 
-            all_plant_names, 
-            limit=3
-        )
-        display_plant_matches(matches, plant_map)
-        st.session_state.shown_suggestions = True
+        sci_matches = process.extract(result['scientific_name'].lower(), all_plant_names, limit=3)
+        for match, score in sci_matches:
+            if score > 50 and match not in processed_names:
+                 matches_to_display.append((match, score))
+                 processed_names.add(match)
+
+    # Get matches for common name (add if different from scientific matches)
+    if result.get('common_name'):
+         common_matches = process.extract(result['common_name'].lower(), all_plant_names, limit=3)
+         for match, score in common_matches:
+             if score > 50 and match not in processed_names and len(matches_to_display) < 3: # Limit total suggestions
+                 matches_to_display.append((match, score))
+                 processed_names.add(match)
+
+    # Sort by score
+    matches_to_display.sort(key=lambda item: item[1], reverse=True)
+
+    if not matches_to_display:
+        st.info("Couldn't find any close matches in the care database.")
+        return
+
+    # Use display_plant_matches to show buttons
+    display_plant_matches(matches_to_display, plant_map)
 
 def display_plant_matches(matches, plant_map):
     """Display matched plants as selectable cards."""
@@ -251,13 +300,20 @@ def display_plant_matches(matches, plant_map):
 
 def initialize_chatbot(care_info):
     """Modern chatbot with proper message containment"""
+    new_plant_name = care_info.get("Plant Name", "Unknown Plant")
     st.subheader(f"💬 Chat with {care_info['Plant Name']}")
-    
-    # Initialize session state
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-        st.session_state.plant_chatbot = PlantChatbot(care_info)
-    
+    # Initialize or Reset if:
+    # 1. Chat history doesn't exist OR
+    # 2. The new plant name is different from the chatbot's current plant
+    if "chat_history" not in st.session_state or current_chatbot_plant != new_plant_name:
+        # st.write(f"DEBUG: Resetting chatbot for {new_plant_name}") # Optional debug message
+        st.session_state.chat_history = []  # Reset history
+        st.session_state.plant_chatbot = PlantChatbot(care_info) # Create new chatbot instance
+        st.session_state.current_chatbot_plant_name = new_plant_name # Track the current plant
+    # --- END MODIFIED Logic ---
+
+    # Use the name stored in session state for consistency in the UI after initialization
+    chatbot_display_name = st.session_state.get("current_chatbot_plant_name", new_plant_name)
     # Custom CSS for chat interface
     st.markdown("""
     <style>
@@ -310,73 +366,91 @@ def initialize_chatbot(care_info):
     </style>
     """, unsafe_allow_html=True)
     
-    # Chat container
+    # Chat container - Use a dedicated div for better scrolling control
     with st.container():
         st.markdown('<div class="chat-container" id="chat-window">', unsafe_allow_html=True)
-        
-        for message in st.session_state.chat_history:
-            if message["role"] == "user":
-                st.markdown(
-                    f'<div class="user-message">'
-                    f'{message["content"]}'
-                    f'<div class="message-meta">You • {message["time"]}</div>'
-                    f'</div>', 
-                    unsafe_allow_html=True
-                )
-            else:
-                st.markdown(
-                    f'<div class="bot-message">'
-                    f'🌿 {message["content"]}'
-                    f'<div class="message-meta">{care_info["Plant Name"]} • {message["time"]}</div>'
-                    f'</div>',
-                    unsafe_allow_html=True
-                )
-        
+        chat_history = st.session_state.get("chat_history", [])
+        if chat_history:
+            for message in chat_history:
+                role = message.get("role")
+                content = message.get("content", "")
+                time = message.get("time", "")
+                if role == "user":
+                    st.markdown(
+                        f'<div class="user-message">{content}<div class="message-meta">You • {time}</div></div>',
+                        unsafe_allow_html=True
+                    )
+                elif role == "assistant":
+                    st.markdown(
+                        f'<div class="bot-message">🌿 {content}<div class="message-meta">{chatbot_display_name} • {time}</div></div>',
+                        unsafe_allow_html=True
+                    )
+        else:
+            # Placeholder when chat is empty
+            st.markdown(f"<p style='text-align: center; color: grey;'>Start chatting with {chatbot_display_name}!</p>", unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Auto-scroll to bottom
+
+    # Auto-scroll to bottom Javascript (keep your original JS)
+    # Note: Might need adjustment if chat-container ID changes or structure differs.
     st.markdown("""
-    <script>
-        window.addEventListener('load', function() {
+        <script>
             const chatWindow = document.getElementById('chat-window');
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        });
-    </script>
+            if (chatWindow) {
+                 // Scroll down fully
+                 chatWindow.scrollTop = chatWindow.scrollHeight;
+                 // console.log("Scrolled down"); // Debugging
+
+                 // Optional: Re-scroll on updates (might be slightly delayed)
+                  const observer = new MutationObserver(function(mutations) {
+                     chatWindow.scrollTop = chatWindow.scrollHeight;
+                  });
+                  observer.observe(chatWindow, { childList: true });
+
+                  // Disconnect on unload
+                  window.addEventListener('beforeunload', () => observer.disconnect());
+            }
+        </script>
     """, unsafe_allow_html=True)
-    
-    # Chat input (positioned at bottom)
-    # Chat input (positioned at bottom)
-    if prompt := st.chat_input(f"Ask {care_info['Plant Name']}..."):
-        # Get current time (with timezone awareness if needed)
-        eastern = pytz.timezone('US/Eastern')  
+
+
+    # Chat input (positioned at bottom via CSS)
+    if prompt := st.chat_input(f"Ask {chatbot_display_name}..."):
+        # Ensure chatbot and history are available before adding messages
+        if "plant_chatbot" not in st.session_state or "chat_history" not in st.session_state:
+            st.error("Chatbot is not initialized properly. Please identify a plant again.")
+            st.stop() # Stop execution if state is inconsistent
+
+        eastern = pytz.timezone('US/Eastern')
         timestamp = datetime.now(eastern).strftime("%H:%M")
-        
-        # Alternative (for explicit timezone handling):
-        # timestamp = datetime.now(pytz.timezone('Your/Timezone')).strftime("%H:%M")
-        
+
         # Add user message
         st.session_state.chat_history.append({
-            "role": "user",
-            "content": prompt,
-            "time": timestamp
+            "role": "user", "content": prompt, "time": timestamp
         })
-        
+
         # Get bot response
         bot_response = st.session_state.plant_chatbot.respond(prompt)
-        
-        # Add bot response (with new timestamp)
+
+        # Add bot response
         st.session_state.chat_history.append({
-            "role": "assistant",
-            "content": bot_response,
-            "time": datetime.now(eastern).strftime("%H:%M")  # Consistent format
+            "role": "assistant", "content": bot_response, "time": datetime.now(eastern).strftime("%H:%M")
         })
-        
-        # Rerun to update
+
+        # Rerun to update the chat display *immediately*
         st.rerun()
-    
-    # Clear button (floating)
-    if st.button("Clear Chat", key="clear_chat"):
-        st.session_state.chat_history = []
+
+    # Clear button (place it below the input logic)
+    # Using columns for potential layout control, though may not be needed with fixed input
+    # col1, col2 = st.columns([0.8, 0.2])
+    # with col2:
+    if st.button("Clear Chat", key="clear_chat_button"): # Use a unique key
+        if "chat_history" in st.session_state:
+            st.session_state.chat_history = []
+            # Decide if clearing chat should also clear the current plant tracking
+            # If you want the chat to restart blank *for the same plant*, don't delete the name
+            # If you want it fully reset, uncomment below:
+            # if "current_chatbot_plant_name" in st.session_state:
+            #     del st.session_state.current_chatbot_plant_name
         st.rerun()
 
 if __name__ == "__main__":
