@@ -307,10 +307,10 @@ def initialize_chatbot(care_info):
     # 2. The new plant name is different from the chatbot's current plant
     current_chatbot_plant = st.session_state.get("current_chatbot_plant_name")
 
-    # --- Add these lines ---
-    st.info(f"DEBUG: Initializing chat UI for '{new_plant_name}'")
-    st.info(f"DEBUG: Comparing with current state name: '{current_chatbot_plant}'")
-    # --- End Add ---
+    # # --- Add these lines ---
+    # st.info(f"DEBUG: Initializing chat UI for '{new_plant_name}'")
+    # st.info(f"DEBUG: Comparing with current state name: '{current_chatbot_plant}'")
+    # # --- End Add ---
     if "chat_history" not in st.session_state or current_chatbot_plant != new_plant_name:
         # st.write(f"DEBUG: Resetting chatbot for {new_plant_name}") # Optional debug message
         st.session_state.chat_history = []  # Reset history
