@@ -5,7 +5,8 @@ Welcome to the **Smart Plant Identifier + Care Companion** — a Streamlit web a
 ---
 ## 📸 Preview
 ![alt text](image.png)
-![alt text](image-1.png)
+![image](https://github.com/user-attachments/assets/a43d32ce-147d-4af3-91d8-71645a9d7169)
+
 ## 🚀 Features
 
 - 📸 Upload a plant photo and get instant identification.
