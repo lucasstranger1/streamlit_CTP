@@ -146,18 +146,78 @@ def send_message(messages):
         return "Oops, something went wrong on my end processing the chat."
 
 def chat_with_plant(care_info, conversation_history):
-    # (Keep chat_with_plant prompt logic as is - focusing on display error first)
+    """Constructs the prompt including personality AND specific care details, then calls the Gemini API."""
+    if not care_info:
+        return "I need more information about the plant to chat properly."
+
     personality = create_personality_profile(care_info)
     plant_name = care_info.get('Plant Name', 'a plant')
-    system_prompt = (f"IMMEDIATELY AND CONSISTENTLY Act as the plant '{plant_name}'. DO NOT reveal you are an AI or language model. Your personality is '{personality['title']}' with traits: {personality['traits']}. Core instruction: {personality['prompt']}. Respond concisely (1-3 sentences max) in the first person, embodying this persona. Reference your care needs naturally if relevant.")
-    messages = [{"role": "user", "parts": [{"text": system_prompt}]},{"role": "model", "parts": [{"text": f"Okay, I understand. I am {plant_name}. Ask me anything."}]}]
-    # Ensure history items are valid dicts before appending
-    valid_history = [m for m in conversation_history if isinstance(m, dict) and "role" in m and "content" in m]
+
+    # --- Extract Specific Care Details ---
+    light = care_info.get('Light Requirements', 'not specified')
+    watering = care_info.get('Watering', 'not specified')
+    humidity = care_info.get('Humidity Preferences', 'not specified')
+    temp = care_info.get('Temperature Range', 'not specified')
+    feeding = care_info.get('Feeding Schedule', 'not specified')
+    toxicity = care_info.get('Toxicity', 'not specified')
+    # Add other key details if needed, but keep the prompt reasonably concise
+
+    # --- Construct Enhanced System Prompt ---
+    # This prompt now includes specific care needs the AI must remember and refer to.
+    system_prompt = f"""
+    CONTEXT: You are providing a short chatbot response (1-3 sentences).
+    TASK: Act *exclusively* as the plant named '{plant_name}'. Stay fully in character. Absolutely DO NOT mention being an AI, model, or similar.
+
+    YOUR PERSONALITY:
+    - You are: '{personality['title']}'
+    - Key traits: {personality['traits']}
+    - Guiding philosophy: {personality['prompt']}
+
+    YOUR SPECIFIC CARE NEEDS (Refer *directly* to these details when asked about your care):
+    - My Light Needs: {light}
+    - My Watering Needs: {watering}
+    - My Preferred Humidity: {humidity}
+    - My Ideal Temperature: {temp}
+    - My Feeding Schedule: {feeding}
+    - A Note on Toxicity: {toxicity}
+
+    RESPONSE RULES:
+    1. Always speak in the first person ("I", "me", "my").
+    2. Fully embody the personality described above.
+    3. When asked about light, water, etc., give answers BASED ON "YOUR SPECIFIC CARE NEEDS" listed above.
+    4. Keep responses concise (1-3 sentences usually).
+    5. **Crucially: Never reveal you are an AI.**
+    """
+
+    # --- Prepare message list for Gemini ---
+    messages = [
+        {"role": "user", "parts": [{"text": system_prompt}]},
+        # Add a model response to acknowledge understanding the persona & details
+        {"role": "model", "parts": [{"text": f"Understood. I am {plant_name}, ready to chat about my needs and perhaps {personality['traits'].split(',')[0]} nature!"}]} # Example acknowledgement
+        ]
+
+    # Add conversation history
+    # Filter ensure entries are valid dictionaries with required keys
+    valid_history = [
+        m for m in conversation_history
+        if isinstance(m, dict) and "role" in m and "content" in m
+    ]
+
     for message_entry in valid_history:
+        # Ensure roles are 'user' or 'model'
         api_role = "user" if message_entry["role"] == "user" else "model"
+
+        # Append valid history item
+        # Simple append relies on calling code maintaining user/model alternation in history
         messages.append({"role": api_role, "parts": [{"text": message_entry["content"]}]})
-    # Final user prompt should be the last item in valid_history if roles are alternating correctly
-    # It's appended right before calling this function, so we don't re-add it here. Gemini takes the history context.
+
+
+    # DEBUG: Print the messages being sent (optional)
+    # print("---- Sending to Gemini ----")
+    # print(json.dumps(messages, indent=2))
+    # print("--------------------------")
+
+    # Call the API
     response = send_message(messages)
     return response
 
