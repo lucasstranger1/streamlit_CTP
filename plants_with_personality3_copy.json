@@ -1,6 +1,5 @@
 [
-  {
-    
+  {    
   "Plant Name": "Abeliophyllum distichum",
   "Light Requirements": "Direct bright light (at least 6 hours)",
   "Watering": "Water when the soil partially dries out",
@@ -20,7 +19,25 @@
     }
   },
   {
-    
+  "Plant Name": "Rhaphidophora tetrasperma",
+  "Light Requirements": "Indirect Bright (6 Hours)",
+  "Watering": "Water regularly to keep soil evenly moist. Avoid direct sunlight as it can scorch the leaves.",
+  "Humidity Preferences": "High humidity (70%)",
+  "Temperature Range": "22° C",
+  "Feeding Schedule": "Fertilize every 4-6 weeks during the growing season with a 20-20-20 liquid fertilizer. Reduce feeding in winter.",
+  "Toxicity": "Toxic to pets and humans if ingested. Contains calcium oxalate crystals.",
+  "Additional Care": "Prefers well-draining loamy soil mixed with perlite or orchid bark. Repot every 1-2 years. Propagate through stem cuttings. Prune to control size and shape. Provide support for climbing, like a moss pole or trellis. Mist regularly to maintain humidity.",
+  "Personality": {
+    "Title": "The Mini Jungle Climber",
+    "Traits": [
+      "Split leaves resembling Monstera deliciosa",
+      "Thrives in humid, indoor environments",
+      "Loves to climb with support structures"
+    ],
+    "Prompt": "I'm a compact climbing plant with split leaves that bring tropical vibes to any room. I thrive in humidity and indirect light, and I love climbing up a moss pole or trellis—perfect for creating your own mini jungle!"
+    }
+  }, 
+  {  
   "Plant Name": "Acacia auriculiformis",
   "Light Requirements": "Direct bright light (at least 8 hours)",
   "Watering": "Water regularly but allow soil to dry out between waterings",
