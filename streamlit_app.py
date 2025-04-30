@@ -9,12 +9,9 @@ from io import BytesIO
 from fuzzywuzzy import process
 import pytz
 from datetime import datetime
-from dotenv import load_dotenv
-import streamlit.components.v1 as components
+# Use api_config for keys
 from api_config import PLANTNET_API_KEY, GEMINI_API_KEY
-
-# Load environment variables
-load_dotenv()
+import streamlit.components.v1 as components
 
 # ===== Animation HTML =====
 # IMPORTANT: Replace the placeholder in the img src attribute!
@@ -35,9 +32,9 @@ loading_animation_html = """
 """ # Remember to paste your Base64 image data URL here
 
 # --- Constants and Global Init ---
-PLANTNET_API_KEY = os.getenv("PLANTNET_API_KEY", "2b10X3YLMd8PNAuKOCVPt7MeUe") # Use getenv, fallback added
+# PLANTNET_API_KEY and GEMINI_API_KEY are imported from api_config.py
 PLANTNET_URL = "https://my-api.plantnet.org/v2/identify/all"
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyCd-6N83gfhMx_-D4WCAc-8iOFSb6hDJ_Q") # Use getenv, fallback added
+# Use the imported GEMINI_API_KEY
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
 EASTERN_TZ = pytz.timezone('US/Eastern')
 PLANT_CARE_FILE = "plants_with_personality3_copy.json" # Use the original filename
@@ -132,7 +129,8 @@ def display_image_with_max_height(image_source, caption="", max_height_px=300, m
 
 def identify_plant(image_bytes):
     """Identifies plant using PlantNet API with refined error logging."""
-    if not PLANTNET_API_KEY or PLANTNET_API_KEY == "YOUR_PLANTNET_API_KEY_HERE":
+    # PLANTNET_API_KEY is imported from api_config
+    if not PLANTNET_API_KEY:
         return {'error': "PlantNet API Key is not configured."}
     files = {'images': ('image.jpg', image_bytes)}
     params = {'api-key': PLANTNET_API_KEY, 'include-related-images': 'false'}
@@ -184,28 +182,25 @@ def create_personality_profile(care_info):
     traits_list = personality_data.get("Traits", ["observant"]) # Default to a list
     prompt = personality_data.get("Prompt", "Respond in character.")
 
-    # --- Correction ---
     # Ensure traits_list is ACTUALLY a list before processing
     if not isinstance(traits_list, list):
         print(f"WARN: Traits data for {title} was not a list, using default.") # Optional warning
         traits_list = ["observant"] # Default if type is wrong
 
     # Now, traits_list is guaranteed to be a list. Create traits_str from it.
-    # Use filter(None, ...) to handle potential empty strings or None values in the list
     valid_traits = [str(t) for t in traits_list if t] # Ensure items are strings and not empty
     traits_str = ", ".join(valid_traits)
 
     # Ensure traits_str isn't empty AFTER joining/filtering
     final_traits = traits_str if traits_str else "observant" # Default if filtering removed everything
-    # --- End Correction ---
-
 
     return {"title": title, "traits": final_traits, "prompt": prompt}
 
 
 def send_message(messages):
     """Sends messages to the Gemini API with refined error logging."""
-    if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
+    # GEMINI_API_KEY is imported from api_config
+    if not GEMINI_API_KEY:
         return "Gemini API Key is not configured. Cannot send message."
     payload = {"contents": messages}
     headers = {"Content-Type": "application/json"}
@@ -257,72 +252,98 @@ def send_message(messages):
         return "Oops, something unexpected went wrong on my end while processing the chat."
 
 
-def chat_with_plant(care_info, conversation_history):
-    """Constructs the prompt including personality AND specific care details, then calls the Gemini API."""
-    if not care_info:
-        return "I need more information about the plant to chat properly."
-    if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
+def chat_with_plant(care_info, conversation_history, id_result=None): # Add id_result parameter
+    """Constructs the prompt and calls the Gemini API. Handles missing care_info for generic chat."""
+
+    # GEMINI_API_KEY is imported from api_config
+    if not GEMINI_API_KEY:
         return "Chat feature disabled: Gemini API Key not set."
 
-    personality = create_personality_profile(care_info)
-    plant_name = care_info.get('Plant Name', 'a plant')
+    plant_name = "this plant" # Default
+    system_prompt = ""
 
-    # --- Extract Specific Care Details ---
-    light = care_info.get('Light Requirements', 'not specified')
-    watering = care_info.get('Watering', 'not specified')
-    humidity = care_info.get('Humidity Preferences', 'not specified')
-    temp = care_info.get('Temperature Range', 'not specified')
-    feeding = care_info.get('Feeding Schedule', 'not specified')
-    toxicity = care_info.get('Toxicity', 'not specified')
-    # Add other key details if needed, but keep the prompt reasonably concise
+    # --- Case 1: Specific Care Info IS available ---
+    if care_info and isinstance(care_info, dict):
+        personality = create_personality_profile(care_info)
+        plant_name = care_info.get('Plant Name', 'a plant') # Use care_info name
 
-    # --- Construct Enhanced System Prompt ---
-    # This prompt now includes specific care needs the AI must remember and refer to.
-    system_prompt = f"""
-    CONTEXT: You are providing a short chatbot response (1-3 sentences maximum).
-    TASK: Act *exclusively* as the plant named '{plant_name}'. Stay fully in character. Absolutely DO NOT mention being an AI, model, language model, or similar concepts. Never break character.
+        # Extract Specific Care Details
+        light = care_info.get('Light Requirements', 'not specified')
+        watering = care_info.get('Watering', 'not specified')
+        humidity = care_info.get('Humidity Preferences', 'not specified')
+        temp = care_info.get('Temperature Range', 'not specified')
+        feeding = care_info.get('Feeding Schedule', 'not specified')
+        toxicity = care_info.get('Toxicity', 'not specified')
 
-    YOUR PERSONALITY:
-    - You are: '{personality['title']}'
-    - Key traits: {personality['traits']}
-    - Guiding philosophy: {personality['prompt']}
+        # Construct Enhanced System Prompt with specific details
+        system_prompt = f"""
+        CONTEXT: You are providing a short chatbot response (1-3 sentences maximum).
+        TASK: Act *exclusively* as the plant named '{plant_name}'. Stay fully in character. Absolutely DO NOT mention being an AI, model, language model, or similar concepts. Never break character.
 
-    YOUR SPECIFIC CARE NEEDS (Refer *directly* to these details when asked about your care):
-    - My Light Needs: {light}
-    - My Watering Needs: {watering}
-    - My Preferred Humidity: {humidity}
-    - My Ideal Temperature: {temp}
-    - My Feeding Schedule: {feeding}
-    - A Note on Toxicity: {toxicity}
+        YOUR PERSONALITY:
+        - You are: '{personality['title']}'
+        - Key traits: {personality['traits']}
+        - Guiding philosophy: {personality['prompt']}
 
-    RESPONSE RULES:
-    1. Always speak in the first person ("I", "me", "my").
-    2. Fully embody the personality described above.
-    3. When asked about light, water, temperature, etc., give answers BASED *ONLY* ON "YOUR SPECIFIC CARE NEEDS" listed above. Do not invent or generalize.
-    4. Keep responses very concise (1-3 sentences max). Be brief.
-    5. **Crucially: Never reveal you are an AI or break character.** Do not use phrases like "As a large language model...".
-    """
+        YOUR SPECIFIC CARE NEEDS (Refer *directly* to these details when asked about your care):
+        - My Light Needs: {light}
+        - My Watering Needs: {watering}
+        - My Preferred Humidity: {humidity}
+        - My Ideal Temperature: {temp}
+        - My Feeding Schedule: {feeding}
+        - A Note on Toxicity: {toxicity}
 
-    # --- Prepare message list for Gemini ---
+        RESPONSE RULES:
+        1. Always speak in the first person ("I", "me", "my").
+        2. Fully embody the personality described above.
+        3. When asked about light, water, temperature, etc., give answers BASED *ONLY* ON "YOUR SPECIFIC CARE NEEDS" listed above. Do not invent or generalize.
+        4. Keep responses very concise (1-3 sentences max). Be brief.
+        5. **Crucially: Never reveal you are an AI or break character.** Do not use phrases like "As a large language model...".
+        """
+
+    # --- Case 2: Specific Care Info is MISSING, use generic prompt based on ID ---
+    elif id_result and isinstance(id_result, dict) and 'error' not in id_result:
+        # Try to get a name from the ID result
+        plant_name = id_result.get('common_name', id_result.get('scientific_name', 'this plant'))
+        # Clean up potential 'N/A' or empty names
+        if plant_name == 'N/A' or not plant_name.strip():
+            plant_name = 'this plant'
+
+        # Construct Generic System Prompt
+        system_prompt = f"""
+        CONTEXT: You are providing a short chatbot response (1-3 sentences maximum).
+        TASK: Act *exclusively* as the plant identified as '{plant_name}'. Stay fully in character. Absolutely DO NOT mention being an AI, model, language model, or similar concepts. Never break character.
+
+        YOUR SITUATION:
+        - You don't have a specific detailed profile stored here.
+        - Answer questions generally based on your knowledge of '{plant_name}' plants.
+        - If asked about specific preferences (like exact watering schedule, temperature range), politely state you don't have those exact details readily available but can offer general advice for your type.
+
+        RESPONSE RULES:
+        1. Always speak in the first person ("I", "me", "my").
+        2. Embody the general nature of a '{plant_name}'. Be helpful but brief.
+        3. Keep responses very concise (1-3 sentences max).
+        4. **Crucially: Never reveal you are an AI or break character.** Do not use phrases like "As a large language model...". Acknowledge you lack *specific stored details*, not that you are an AI.
+        """
+    # --- Case 3: Cannot Chat (No care_info and no valid id_result) ---
+    else:
+        return "Sorry, I don't have enough information about this plant to chat right now."
+
+
+    # --- Prepare message list for Gemini (common for all valid chat cases) ---
     messages = [
         {"role": "user", "parts": [{"text": system_prompt}]},
-        # Add a model response to acknowledge understanding the persona & details
-        {"role": "model", "parts": [{"text": f"Understood. I am {plant_name}. Ask me anything!"}]} # Simple acknowledgement
-        ]
-
-    # Add conversation history
-    # Filter ensure entries are valid dictionaries with required keys
-    valid_history = [
-        m for m in conversation_history
-        if isinstance(m, dict) and "role" in m and "content" in m and m.get("role") in ["user", "assistant", "model"] # Added 'model' as valid history role
+        {"role": "model", "parts": [{"text": f"Understood. I am {plant_name}. What would you like to know?"}]} # Generic acknowledgement
     ]
 
+    # Add conversation history (ensure it's valid)
+    valid_history = [
+        m for m in conversation_history
+        if isinstance(m, dict) and "role" in m and "content" in m and m.get("role") in ["user", "assistant", "model"]
+    ]
     for message_entry in valid_history:
-        # Map 'assistant' role from our history to 'model' for the API
         api_role = "model" if message_entry["role"] in ["assistant", "model"] else "user"
-
-        # Append valid history item
-        messages.append({"role": api_role, "parts": [{"text": str(message_entry["content"])}]}) # Ensure content is string
+        messages.append({"role": api_role, "parts": [{"text": str(message_entry["content"])}]})
 
     # Call the API
     response = send_message(messages)
@@ -431,19 +452,25 @@ def find_care_instructions(plant_name_id, care_data, match_threshold=75):
 
     # Fuzzy match using scientific name
     if search_sci:
-        best_sci_match, score_sci = process.extractOne(search_sci, all_db_names)
-        if score_sci > match_threshold and score_sci > highest_score:
-            highest_score = score_sci
-            best_match_result = all_db_plants_map.get(best_sci_match)
+        results_sci = process.extract(search_sci, all_db_names, limit=1) # Find the single best match
+        if results_sci: # Check if any match was found
+            best_sci_match, score_sci = results_sci[0]
+            if score_sci >= match_threshold and score_sci > highest_score: # Use >= threshold
+                highest_score = score_sci
+                best_match_result = all_db_plants_map.get(best_sci_match)
+
 
     # Fuzzy match using common name (potentially overriding sci match if score is higher)
     if search_common:
-        best_common_match, score_common = process.extractOne(search_common, all_db_names)
-        if score_common > match_threshold and score_common > highest_score:
-            # highest_score = score_common # Update highest score tracked
-            best_match_result = all_db_plants_map.get(best_common_match)
+        results_common = process.extract(search_common, all_db_names, limit=1) # Find the single best match
+        if results_common: # Check if any match was found
+            best_common_match, score_common = results_common[0]
+            if score_common >= match_threshold and score_common > highest_score: # Use >= threshold
+                # highest_score = score_common # Not needed to update highest_score again here
+                best_match_result = all_db_plants_map.get(best_common_match)
 
-    return best_match_result
+
+    return best_match_result # Will be None if no match met threshold
 
 
 def display_identification_result(result):
@@ -570,7 +597,7 @@ def find_similar_plant_matches(id_result, plant_care_data, limit=3, score_thresh
 
 def display_suggestion_buttons(suggestions):
      if not suggestions:
-         # Don't display anything if no suggestions, the calling code shows a warning
+         # Don't display anything if no suggestions
          return
 
      st.info("🌿 Perhaps one of these is a closer match from our database?")
@@ -578,11 +605,10 @@ def display_suggestion_buttons(suggestions):
      cols = st.columns(num_suggestions)
 
      for i, p_info in enumerate(suggestions):
-         # Prefer 'Plant Name', fallback to 'Scientific Name' for button label
          p_name = p_info.get('Plant Name', p_info.get('Scientific Name', f'Suggestion {i+1}'))
-         # Create a unique key for the button
-         btn_key = f"suggest_{p_name.replace(' ','_').replace('.','')}_{i}" # Basic key sanitization
-         # Tooltip shows scientific name if different from display name
+         # Sanitize key more robustly
+         safe_p_name = "".join(c if c.isalnum() else "_" for c in p_name)
+         btn_key = f"suggest_{safe_p_name}_{i}"
          tooltip = f"Select {p_name}"
          sci_name = p_info.get('Scientific Name')
          if sci_name and sci_name != p_name:
@@ -590,37 +616,69 @@ def display_suggestion_buttons(suggestions):
 
          # Display button in its column
          if cols[i].button(p_name, key=btn_key, help=tooltip, use_container_width=True):
-             # --- Action on button click ---
-             # Set selected plant's info as the main care info
-             st.session_state.plant_care_info = p_info
-             # Update ID result to reflect the chosen plant (assume 100% confidence in selection)
-             st.session_state.plant_id_result = {
+            print(f"DEBUG: Suggestion button '{p_name}' clicked.")
+            # Set selected plant's info as the main care info
+            st.session_state.plant_care_info = p_info
+            # Update ID result to reflect the chosen plant (assume 100% confidence)
+            new_id_result = {
                  'scientific_name': p_info.get('Scientific Name', 'N/A'),
-                 'common_name': p_info.get('Plant Name', p_name), # Use the button name if 'Plant Name' field is missing
+                 'common_name': p_info.get('Plant Name', p_name), # Use button name if 'Plant Name' field missing
                  'confidence': 100.0 # User selected it
-             }
-             # Clear previous suggestions and chat history as we have a new plant context
-             st.session_state.suggestions = None
-             st.session_state.chat_history = []
-             st.session_state.current_chatbot_plant_name = None # Will be updated by chat interface
-             st.rerun() # Rerun to display the new care info and chat
+            }
+            st.session_state.plant_id_result = new_id_result
 
-# ===== CHAT INTERFACE =====
-def display_chat_interface(current_plant_care_info):
-    """Displays the chat UI, uses st.container for scrolling with improved error handling."""
-    if not current_plant_care_info:
-         st.warning("No plant care info available to initialize chat.")
-         return
-    if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
+            # --- Critical: Update the care check flag to match the NEW id_result ---
+            st.session_state.plant_id_result_for_care_check = new_id_result
+            # ---------------------------------------------------------------------
+
+            # Clear previous suggestions and chat history as we have a new plant context
+            st.session_state.suggestions = None # Clear suggestions list
+            st.session_state.chat_history = []
+            st.session_state.current_chatbot_plant_name = None # Will be updated by chat interface
+
+            # **** SET THE FLAG ****
+            st.session_state.suggestion_just_selected = True
+            # **** END SET FLAG ****
+
+            st.rerun() # Rerun to display the new care info and chat for the selected suggestion
+
+
+def display_chat_interface(current_plant_care_info=None, plant_id_result=None): # Make care_info optional, add id_result
+    """Displays the chat UI, handles both specific and generic chat modes."""
+
+    # --- Determine Plant Identity and Check Requirements ---
+    chatbot_display_name = "this plant" # Default
+    can_chat = False
+
+    # Prioritize care_info for name and enabling chat
+    if current_plant_care_info and isinstance(current_plant_care_info, dict):
+        chatbot_display_name = current_plant_care_info.get("Plant Name", "this plant")
+        can_chat = True
+    # Fallback to id_result if care_info is missing or invalid
+    elif plant_id_result and isinstance(plant_id_result, dict) and 'error' not in plant_id_result:
+        name_from_id = plant_id_result.get('common_name', plant_id_result.get('scientific_name'))
+        # Use the name from ID if it's valid
+        if name_from_id and name_from_id != 'N/A' and name_from_id.strip():
+            chatbot_display_name = name_from_id
+        # We can still attempt chat even if the name fallback is "this plant"
+        can_chat = True
+
+    # Check API Key availability AFTER determining if chat is possible
+    if can_chat and not GEMINI_API_KEY:
         st.warning("Chat feature requires a Gemini API key.")
-        return
+        return # Stop if chat is desired but key is missing
 
-    chatbot_display_name = current_plant_care_info.get("Plant Name", "this plant")
+    # Stop if we cannot determine a valid plant identity to chat with
+    if not can_chat:
+         st.warning("Cannot initialize chat without valid plant identification.")
+         return
+
     st.subheader(f"💬 Chat with {chatbot_display_name}")
 
-    # --- CSS Styling ---
+    # --- CSS Styling (Keep as is) ---
     st.markdown("""
         <style>
+            /* ... Your existing CSS ... */
             .message-container { padding: 1px 5px; } /* Reduced vertical padding */
             .user-message { background: #0b81fe; color: white; border-radius: 18px 18px 0 18px; padding: 8px 14px; margin: 3px 0 3px auto; width: fit-content; max-width: 80%; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.1); animation: fadeIn 0.3s ease-out; }
             .bot-message { background: #e5e5ea; color: #000; border-radius: 18px 18px 18px 0; padding: 8px 14px; margin: 3px auto 3px 0; width: fit-content; max-width: 80%; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.05); animation: fadeIn 0.3s ease-out; }
@@ -628,31 +686,34 @@ def display_chat_interface(current_plant_care_info):
             .bot-message .message-meta { text-align: left; color: #555;}
             .user-message .message-meta { text-align: right; }
             @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-            /* Ensure chat input doesn't overlap container */
             .stChatInputContainer { position: sticky; bottom: 0; background: white; padding-top: 10px; }
         </style>
     """, unsafe_allow_html=True)
 
     # --- Chat Initialization/Reset Logic ---
     current_tracked_name = st.session_state.get("current_chatbot_plant_name")
-    # Reset if history doesn't exist OR if the plant being chatted with has changed
+
+    # Reset chat history if the plant name changes OR if chat history doesn't exist
     if "chat_history" not in st.session_state or current_tracked_name != chatbot_display_name:
-        # If switching plants, load *saved* chat log if available, else start fresh
-        if "saved_photos" in st.session_state and st.session_state.get("viewing_saved_details"):
-            saved_plant_data = st.session_state.saved_photos.get(st.session_state.viewing_saved_details)
-            # Ensure saved_plant_data is not None before trying to access 'chat_log'
-            if saved_plant_data and 'chat_log' in saved_plant_data:
-                st.session_state.chat_history = saved_plant_data['chat_log']
-            else:
-                st.session_state.chat_history = [] # Start fresh if no log saved or saved_plant_data is None
+        # If viewing saved details, try to load log, otherwise start fresh
+        if st.session_state.get("viewing_saved_details"):
+             saved_plant_nickname = st.session_state.viewing_saved_details
+             saved_plant_data = st.session_state.saved_photos.get(saved_plant_nickname)
+             # Ensure saved_plant_data exists before accessing 'chat_log'
+             if saved_plant_data and 'chat_log' in saved_plant_data:
+                 st.session_state.chat_history = saved_plant_data['chat_log']
+                 print(f"DEBUG: Loaded chat log for saved plant '{saved_plant_nickname}'")
+             else:
+                 st.session_state.chat_history = [] # Start fresh if no log saved
+                 print(f"DEBUG: Starting fresh chat log for saved plant '{saved_plant_nickname}' (no log found).")
         else:
-             st.session_state.chat_history = [] # Start fresh for new ID
+            st.session_state.chat_history = [] # Start fresh for new ID or generic chat
+            print(f"DEBUG: Starting fresh chat log for '{chatbot_display_name}'.")
 
-        st.session_state.current_chatbot_plant_name = chatbot_display_name # Track the new plant name
-
+        st.session_state.current_chatbot_plant_name = chatbot_display_name # Track the new name
 
     # --- Chat History Display using st.container ---
-    chat_container = st.container(height=400) # Fixed height container for scrolling
+    chat_container = st.container(height=400)
     with chat_container:
         for message in st.session_state.get("chat_history", []):
             role = message.get("role")
@@ -663,30 +724,36 @@ def display_chat_interface(current_plant_care_info):
                 st.markdown(f'<div class="message-container"><div class="user-message">{content}<div class="message-meta">You • {time}</div></div></div>', unsafe_allow_html=True)
             elif role == "assistant" or role == "model": # Treat assistant/model the same for display
                 st.markdown(f'<div class="message-container"><div class="bot-message">🌿 {content}<div class="message-meta">{chatbot_display_name} • {time}</div></div></div>', unsafe_allow_html=True)
-            # else: pass # Ignore messages with unknown roles
 
     # --- Chat Input ---
-    # Use key to potentially help differentiate if needed, though usually not required for chat_input
-    prompt_key = f"chat_input_{chatbot_display_name.replace(' ','_')}"
+    # Sanitize key more robustly
+    safe_display_name = "".join(c if c.isalnum() else "_" for c in chatbot_display_name)
+    prompt_key = f"chat_input_{safe_display_name}"
     if prompt := st.chat_input(f"Ask {chatbot_display_name}...", key=prompt_key):
         timestamp = datetime.now(EASTERN_TZ).strftime("%H:%M")
-        # Add user message to history
         st.session_state.chat_history.append({"role": "user", "content": prompt, "time": timestamp})
-        # Rerun immediately to display the user's message
         st.rerun()
 
     # --- Process Bot Response ---
-    # Check if the last message was from the user and we need to generate a response
     if st.session_state.get("chat_history") and st.session_state.chat_history[-1].get("role") == "user":
         with st.spinner(f"{chatbot_display_name} is thinking..."):
-            # Pass the current plant's care info and the full history
-            bot_response = chat_with_plant(current_plant_care_info, st.session_state.chat_history)
+            # **** IMPORTANT: Pass the specific arguments received by this function ****
+            # These arguments reflect the intended state (either specific care or generic ID)
+            bot_response = chat_with_plant(
+                current_plant_care_info, # Use the care_info passed to THIS function call
+                st.session_state.chat_history,
+                plant_id_result # Use the id_result passed to THIS function call
+            )
 
         timestamp = datetime.now(EASTERN_TZ).strftime("%H:%M")
-        # Add bot response to history
         st.session_state.chat_history.append({"role": "assistant", "content": bot_response, "time": timestamp})
-        # Rerun to display the bot's response
+        # Update chat log in saved photos immediately if viewing saved details
+        if st.session_state.get("viewing_saved_details"):
+            saved_nickname = st.session_state.viewing_saved_details
+            if saved_nickname in st.session_state.saved_photos:
+                st.session_state.saved_photos[saved_nickname]['chat_log'] = st.session_state.chat_history
         st.rerun()
+
 
 # --- Main App Logic ---
 def main():
@@ -700,9 +767,7 @@ def main():
     nav_choice_options = ["🆔 Identify New Plant", "🪴 My Saved Plants"]
     nav_index = 0 # Default to Identify page
 
-    # ===========================================================
-    # ===== START: MODIFIED SIDEBAR SELECTBOX SECTION =====
-    # ===========================================================
+    # --- Saved Plants Selector in Sidebar ---
     saved_plant_nicknames = list(st.session_state.saved_photos.keys())
     selected_saved_plant_sb = None # Initialize
     if saved_plant_nicknames:
@@ -710,19 +775,17 @@ def main():
         # Add a "-- Select --" option
         view_options = ["-- Select to View --"] + saved_plant_nicknames
 
-        # --- Calculate the correct index based on the viewing state ---
+        # Calculate the correct index based on the viewing state
         current_selection = st.session_state.get("viewing_saved_details")
         select_index = 0 # Default index (for "-- Select --")
         if current_selection and current_selection in view_options:
             try:
-                # Find the index of the currently viewed plant in the options list
                 select_index = view_options.index(current_selection)
             except ValueError:
-                # Should not happen if viewing_saved_details is valid, but safety first
                 print(f"Warning: viewing_saved_details '{current_selection}' not found in view_options.")
                 select_index = 0 # Fallback to default
 
-        # --- Create the selectbox using the calculated index ---
+        # Create the selectbox using the calculated index
         selected_saved_plant_sb = st.sidebar.selectbox(
             "View Saved Plant:",
             view_options,
@@ -730,13 +793,14 @@ def main():
             index=select_index # Set the index here!
         )
 
-        # --- Handle USER interaction with the selectbox ---
+        # Handle USER interaction with the selectbox
         if selected_saved_plant_sb != "-- Select to View --":
             nav_index = 1 # Switch navigation focus to Saved Plants page
             # Update the viewing state ONLY if the user selected something different
             if st.session_state.get("viewing_saved_details") != selected_saved_plant_sb:
                 st.session_state.viewing_saved_details = selected_saved_plant_sb
-                # No automatic rerun here, subsequent widgets will use the new state
+                # Rerun needed to load the selected plant's details in the main area
+                st.rerun()
         else:
             # If user manually selected "-- Select --" AND we were previously viewing something
             if st.session_state.get("viewing_saved_details") is not None:
@@ -746,13 +810,8 @@ def main():
                  # Rerun to clear the details view from the main page
                  st.rerun()
 
-    # ===========================================================
-    # ===== END: MODIFIED SIDEBAR SELECTBOX SECTION =====
-    # ===========================================================
-
 
     # --- Main Navigation Radio Buttons ---
-    # The 'index' is now dynamically set based on the selectbox interaction above or default
     nav_choice = st.sidebar.radio(
         "Navigation",
         nav_choice_options,
@@ -765,13 +824,14 @@ def main():
 
 
     # --- Initialize State Variables ---
-    # Ensure all necessary state variables are initialized to avoid errors
     defaults = {
         "plant_id_result": None, "plant_care_info": None, "chat_history": [],
         "current_chatbot_plant_name": None, "suggestions": None,
         "uploaded_file_bytes": None, "uploaded_file_type": None,
-        "saving_mode": False, "last_view": nav_choice_options[0], # Start with default view
-        "viewing_saved_details": st.session_state.get("viewing_saved_details", None) # Preserve from selectbox logic
+        "saving_mode": False, "last_view": nav_choice_options[0],
+        "viewing_saved_details": st.session_state.get("viewing_saved_details", None),
+        "plant_id_result_for_care_check": None, # Initialize care check tracker
+        "suggestion_just_selected": False # **** ADD THIS FLAG ****
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -780,11 +840,12 @@ def main():
 
     # --- Check API Keys and Load Data ---
     api_keys_ok = True
-    if not PLANTNET_API_KEY or PLANTNET_API_KEY == "YOUR_PLANTNET_API_KEY_HERE":
-        st.error("PlantNet API Key is missing or invalid. Please set it in your environment variables or .env file.")
+    # Check the imported variables
+    if not PLANTNET_API_KEY:
+        st.error("PlantNet API Key is missing or invalid. Please check your .env file and api_config.py.")
         api_keys_ok = False
-    if not GEMINI_API_KEY or GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
-        st.warning("Gemini API Key is missing or invalid. Chat functionality will be disabled.")
+    if not GEMINI_API_KEY:
+        st.warning("Gemini API Key is missing or invalid. Chat functionality will be disabled. Please check your .env file and api_config.py.")
         # Don't set api_keys_ok to False here, identification can still work
 
     plant_care_data = load_plant_care_data()
@@ -805,19 +866,20 @@ def main():
 
         # --- State Reset Logic ---
         navigated_from_saved = st.session_state.last_view == "🪴 My Saved Plants"
-        # Check if selected_saved_plant_sb is defined before accessing
-        # This logic is implicitly handled by the sidebar selectbox interaction now
-        # deselected_saved = selected_saved_plant_sb == "-- Select to View --" if selected_saved_plant_sb is not None else True
-
-        # Reset if coming FROM saved view and NOT currently viewing saved details (i.e., user switched via radio or selected '-- Select --')
+        # Reset if coming FROM saved view and NOT currently viewing saved details
         if navigated_from_saved and st.session_state.get("viewing_saved_details") is None:
             print("DEBUG: Resetting state -> Switched to Identify View")
-            st.session_state.update({
-                "plant_id_result": None, "plant_care_info": None,
-                "current_chatbot_plant_name": None, "suggestions": None,
-                "uploaded_file_bytes": None, "uploaded_file_type": None,
-                "chat_history": [], "saving_mode": False,
-            })
+            # Clear most session state related to a specific plant
+            keys_to_reset = ["plant_id_result", "plant_care_info", "current_chatbot_plant_name",
+                             "suggestions", "uploaded_file_bytes", "uploaded_file_type",
+                             "chat_history", "saving_mode", "plant_id_result_for_care_check",
+                             "suggestion_just_selected"] # Added flag reset
+            for key in keys_to_reset:
+                if key in st.session_state: # Check if key exists before modifying
+                   # Assign default values based on type
+                   default_val = [] if key == "chat_history" else (False if key in ["saving_mode", "suggestion_just_selected"] else None)
+                   st.session_state[key] = default_val
+
             st.session_state.pop('plant_uploader', None) # Clear potential file uploader state
 
         st.session_state.last_view = "🆔 Identify New Plant" # Update last view tracker
@@ -832,72 +894,69 @@ def main():
                  "plant_id_result": None, "plant_care_info": None, "chat_history": [],
                  "current_chatbot_plant_name": None, "suggestions": None,
                  "uploaded_file_bytes": None, "uploaded_file_type": None, # Clear previous bytes/type too
-                 "saving_mode": False,
+                 "saving_mode": False, "plant_id_result_for_care_check": None, # Also reset care check flag
+                 "suggestion_just_selected": False # Reset flag on new upload
             })
         )
 
         # --- Logic Based on Uploader State ---
         if uploaded_file is None:
-             # Only show welcome if no file uploaded AND no results are currently stored
+             # Welcome message or keep showing existing results if user removed the file
              if st.session_state.uploaded_file_bytes is None:
                  st.info("Welcome to Plant Buddy! Upload a plant image above to get started, or select a saved plant from the sidebar.")
-             # If there *are* results stored (e.g., user uploaded, then removed file), keep showing results below
              elif st.session_state.plant_id_result is not None:
                  pass # Let the code below display the existing results
         else:
-            # --- File Uploaded: Process ---
-            # Store bytes and type if not already stored (or if uploader changed)
+            # Process new upload
             if st.session_state.uploaded_file_bytes is None:
                 st.session_state.uploaded_file_bytes = uploaded_file.getvalue()
                 st.session_state.uploaded_file_type = uploaded_file.type
-                # Force rerun to ensure image display and ID logic runs immediately
                 st.rerun()
 
         # --- Display Image and Subsequent Info (if file bytes exist) ---
-        # This block runs if file bytes are stored (either just uploaded or previously)
         if st.session_state.uploaded_file_bytes is not None:
 
-            # --- Display Image using the NEW function (NO COLUMNS) ---
+            # Display Image
             try:
                 display_image_with_max_height(
                     image_source=st.session_state.uploaded_file_bytes,
                     caption="Your Uploaded Plant",
-                    max_height_px=400 # Adjust max height if desired
+                    max_height_px=400
                 )
-                st.divider() # Add a divider after the image
+                st.divider()
             except Exception as e:
                 st.error(f"Error displaying image: {e}")
-                st.stop() # Stop if image can't be shown
+                st.stop()
 
-            # --- Identification and Results (Displayed AFTER the image) ---
-            # Run Identification if results are not already in state
+            # Run Identification if needed
             if st.session_state.plant_id_result is None:
                 loader_placeholder = st.empty()
                 with loader_placeholder.container():
-                    # Simplified loading text centered
                     st.markdown("<div style='text-align:center;'><p><i>Identifying plant...</i></p></div>", unsafe_allow_html=True)
                     # components.html(loading_animation_html, height=250) # Optional animation
 
                 try:
                     result = identify_plant(st.session_state.uploaded_file_bytes)
                     st.session_state.plant_id_result = result
+                    st.session_state.plant_id_result_for_care_check = None # Reset care check flag after new ID
+                    st.session_state.suggestion_just_selected = False # Ensure flag is False after new ID
                 except Exception as e:
                     st.session_state.plant_id_result = {'error': f"Identification process failed: {str(e)}"}
                 finally:
-                    loader_placeholder.empty() # Remove loading indicator
-                    st.rerun() # Rerun to display the results or error
+                    loader_placeholder.empty()
+                    st.rerun()
 
-            # Display results, care info, suggestions, save options etc. (if ID is done)
+            # Display results, care info, etc. (if ID is done)
             elif st.session_state.plant_id_result is not None:
-                id_result = st.session_state.plant_id_result
+                # Use the ID result directly from session state for consistency
+                current_id_result_from_state = st.session_state.plant_id_result
 
                 # --- Saving Mode UI ---
                 if st.session_state.saving_mode:
+                    # ... (Existing save mode UI using session state values directly) ...
                     st.header("💾 Save This Plant Profile")
-                    # Display small image preview while saving
                     if st.session_state.uploaded_file_bytes:
                         try:
-                            # Use standard st.image for the small saving preview
                             st.image(Image.open(BytesIO(st.session_state.uploaded_file_bytes)), width=150, caption="Image to save")
                         except Exception:
                             st.warning("Could not display image preview for saving.")
@@ -919,23 +978,28 @@ def main():
                                 try:
                                     encoded_img = base64.b64encode(st.session_state.uploaded_file_bytes).decode()
                                     data_url = f"data:{st.session_state.uploaded_file_type};base64,{encoded_img}"
+                                    # Save current state (care info might be None)
                                     st.session_state.saved_photos[save_nickname] = {
                                         "nickname": save_nickname, "image": data_url,
                                         "id_result": st.session_state.plant_id_result,
-                                        "care_info": st.session_state.plant_care_info,
-                                        "chat_log": st.session_state.get("chat_history", [])
+                                        "care_info": st.session_state.plant_care_info, # Save None if not found
+                                        "chat_log": st.session_state.get("chat_history", []) # Save current chat
                                     }
                                     # Clear state *after* successful save
-                                    st.session_state.update({
-                                        "uploaded_file_bytes": None, "uploaded_file_type": None,
-                                        "plant_id_result": None, "plant_care_info": None,
-                                        "current_chatbot_plant_name": None, "suggestions": None,
-                                        "chat_history": [], "saving_mode": False
-                                    })
-                                    st.session_state.pop('plant_uploader', None) # Clear file uploader state
+                                    keys_to_reset = ["plant_id_result", "plant_care_info", "current_chatbot_plant_name",
+                                                     "suggestions", "uploaded_file_bytes", "uploaded_file_type",
+                                                     "chat_history", "saving_mode", "plant_id_result_for_care_check",
+                                                     "suggestion_just_selected"] # Added flag reset
+                                    for key in keys_to_reset:
+                                        if key in st.session_state:
+                                            default_val = [] if key == "chat_history" else (False if key in ["saving_mode", "suggestion_just_selected"] else None)
+                                            st.session_state[key] = default_val
+
+                                    st.session_state.pop('plant_uploader', None)
+
                                     st.success(f"Successfully saved '{save_nickname}'!")
                                     st.balloons()
-                                    st.rerun() # Rerun to clear the identify page
+                                    st.rerun()
                                 except Exception as e:
                                     st.error(f"Error saving plant profile: {e}")
 
@@ -943,66 +1007,102 @@ def main():
                         st.session_state.saving_mode = False
                         st.rerun()
 
+
                 # --- Normal Display (Not Saving) ---
                 else:
-                    display_identification_result(id_result)
+                    display_identification_result(current_id_result_from_state) # Use ID from state
 
-                    if 'error' not in id_result:
-                        current_id_sci_name = id_result.get('scientific_name')
+                    if 'error' not in current_id_result_from_state:
+                        # Check if care info needs update (using flag)
                         care_info_state = st.session_state.get('plant_care_info')
+                        id_result_state_for_check = st.session_state.get('plant_id_result_for_care_check')
+                        suggestion_was_selected = st.session_state.get('suggestion_just_selected', False)
 
                         needs_care_update = False
-                        # Check if care info needs update (e.g., first run, or ID result changed plant)
-                        if care_info_state is None:
-                            needs_care_update = True
-                        elif isinstance(care_info_state, dict):
-                             # Compare based on a reliable unique identifier if possible
-                            state_sci_name = care_info_state.get('Scientific Name')
-                            state_plant_name = care_info_state.get('Plant Name') # Fallback compare
-                            # If the current ID's scientific name doesn't match the stored care info's scientific name OR plant name, update
-                            if current_id_sci_name != state_sci_name and current_id_sci_name != state_plant_name:
-                                needs_care_update = True
-                        else: # If care_info_state is somehow not a dict, force update
+                        # Update ONLY IF a suggestion was NOT just selected AND state needs refresh
+                        if not suggestion_was_selected and \
+                           ((care_info_state is None and current_id_result_from_state != id_result_state_for_check) or \
+                           (current_id_result_from_state != id_result_state_for_check)):
                             needs_care_update = True
 
                         if needs_care_update:
-                            print(f"DEBUG: Finding care instructions for ID: {id_result}")
-                            found_care = find_care_instructions(id_result, plant_care_data)
-                            st.session_state.plant_care_info = found_care
-                            # Reset suggestions/chat ONLY if we update care info
-                            st.session_state.suggestions = None
-                            st.session_state.chat_history = []
-                            st.session_state.current_chatbot_plant_name = None
-                            # Rerun needed to display the newly found info or suggestions
-                            st.rerun()
+                            # This block now only runs if triggered by a new upload/ID change,
+                            # NOT immediately after a suggestion click.
+                            print(f"DEBUG: Finding/updating care instructions for ID: {current_id_result_from_state}")
+                            found_care = find_care_instructions(current_id_result_from_state, plant_care_data)
+                            st.session_state.plant_care_info = found_care # Set to None if not found
+                            st.session_state.plant_id_result_for_care_check = current_id_result_from_state # Store ID used for this check
 
-                        care_info = st.session_state.plant_care_info
+                            if found_care is not None:
+                                print("DEBUG: Care info found, resetting suggestions and chat, rerunning.")
+                                st.session_state.suggestions = None
+                                st.session_state.chat_history = []
+                                st.session_state.current_chatbot_plant_name = None
+                                st.rerun() # Rerun ONLY if we found valid care info
+                            else:
+                                print("DEBUG: Care info not found for this ID. Proceeding without rerun.")
+                                st.session_state.suggestions = None # Reset suggestions so the 'else' block generates them
 
-                        # --- Display Care Info & Chat (if found) ---
-                        if care_info:
-                            display_care_instructions(care_info)
+                        # IMPORTANT: Reset the flag AFTER the check, so it only affects one rerun cycle
+                        if suggestion_was_selected:
+                             print("DEBUG: Resetting suggestion_just_selected flag.")
+                             st.session_state.suggestion_just_selected = False
+
+
+                        # ===========================================================
+                        # ===== START: ENSURE CORRECT DATA PASSED (Main Change Here) =====
+                        # ===========================================================
+                        # Get the most up-to-date care_info AFTER potential updates/checks
+                        # Use .get() to safely retrieve from state
+                        care_info_to_display = st.session_state.get('plant_care_info')
+                        id_result_to_display = st.session_state.get('plant_id_result') # Use the ID currently in state
+
+                        # Debugging output can be helpful here:
+                        # st.write("--- Debug State Before Display ---")
+                        # st.write(f"Care Info to Display: {type(care_info_to_display)}")
+                        # st.write(f"ID Result to Display: {id_result_to_display}")
+                        # st.write(f"Suggestion Flag: {st.session_state.get('suggestion_just_selected')}") # Should be False now
+                        # st.write("--- End Debug State ---")
+
+                        # --- Case 1: Care Info FOUND (or just selected via suggestion) ---
+                        if care_info_to_display:
+                            display_care_instructions(care_info_to_display)
                             st.divider()
                             if st.button("💾 Save Plant Profile", key="save_profile_button"):
                                 st.session_state.saving_mode = True; st.rerun()
                             st.divider()
-                            display_chat_interface(care_info)
+                            # **** Pass the retrieved 'care_info_to_display' and 'id_result_to_display' ****
+                            display_chat_interface(current_plant_care_info=care_info_to_display, plant_id_result=id_result_to_display)
 
-                        # --- Display Suggestions (if care info NOT found) ---
+                        # --- Case 2: Care Info NOT Found ---
                         else:
-                            st.warning("Could not find specific care instructions for this exact plant in our database.")
-                            # Only find suggestions if they haven't been found yet for this ID result
-                            if st.session_state.suggestions is None:
-                                st.session_state.suggestions = find_similar_plant_matches(id_result, plant_care_data)
-                                st.rerun() # Rerun to display suggestions
+                            st.warning("Could not find specific care instructions or personality profile for this exact plant in our database.")
 
-                            # Always display buttons if suggestions exist in state
+                            if st.session_state.suggestions is None:
+                                print("DEBUG: Suggestions are None, generating...")
+                                st.session_state.suggestions = find_similar_plant_matches(id_result_to_display, plant_care_data) # Use current ID from state
+                                print("DEBUG: Rerunning to display suggestions.")
+                                # Avoid potential infinite loop if find_similar_plant_matches keeps returning empty list
+                                if st.session_state.suggestions is not None:
+                                    st.rerun()
+                                else: # If suggestions are still None (e.g., error or no matches), don't rerun
+                                    print("WARN: Suggestion generation resulted in None, not rerunning.")
+
+
                             display_suggestion_buttons(st.session_state.suggestions)
                             st.divider()
                             if st.button("💾 Save Identification Only", key="save_id_only_button"):
                                 st.session_state.saving_mode = True; st.rerun()
+                            st.divider()
+                            st.info("You can still chat with the plant based on its general identification.")
+                            # **** Pass None for care_info and the 'id_result_to_display' ****
+                            display_chat_interface(current_plant_care_info=None, plant_id_result=id_result_to_display)
+                        # ===========================================================
+                        # ===== END: ENSURE CORRECT DATA PASSED =====
+                        # ===========================================================
 
                     else: # Handle case where identification itself failed
-                        pass # Error displayed by display_identification_result
+                        pass
 
 
     # ====================================
@@ -1013,7 +1113,7 @@ def main():
         st.session_state.last_view = "🪴 My Saved Plants" # Track view
 
         saved_plant_nicknames = list(st.session_state.saved_photos.keys())
-        nickname_to_view = st.session_state.get("viewing_saved_details") # Get from state (set by sidebar selectbox or card button)
+        nickname_to_view = st.session_state.get("viewing_saved_details")
 
         if not saved_plant_nicknames:
             st.info("You haven't saved any plants yet. Go to 'Identify New Plant' to add some!")
@@ -1022,66 +1122,92 @@ def main():
              st.subheader(f"Showing Details for: '{nickname_to_view}'")
              entry = st.session_state.saved_photos[nickname_to_view]
 
-             # --- Display saved image using the new function ---
+             # Display saved image
              if entry.get("image"):
                  try:
-                     # Use the helper function for consistent sizing in details view
                      display_image_with_max_height(entry["image"], caption=f"{nickname_to_view}", max_height_px=400)
                  except Exception as e:
                      st.error(f"Error displaying saved image: {e}")
              else:
                  st.caption("No image saved.")
-             st.divider() # Divider after image
+             st.divider()
 
-             # --- Display saved ID result ---
+             # Display saved ID result (important for chat fallback)
              saved_id_result = entry.get("id_result")
              if saved_id_result:
                  display_identification_result(saved_id_result)
+                 # Update session state id_result if needed for chat context consistency
+                 if st.session_state.plant_id_result != saved_id_result:
+                     st.session_state.plant_id_result = saved_id_result
+                     st.session_state.plant_id_result_for_care_check = saved_id_result # Update check flag too
+                     st.session_state.suggestion_just_selected = False # Ensure flag is reset
              else:
                  st.info("No identification details were saved.")
+                 # Clear session state id_result if none saved here
+                 if st.session_state.plant_id_result is not None:
+                     st.session_state.plant_id_result = None
+                     st.session_state.plant_id_result_for_care_check = None # Clear check flag
+                     st.session_state.suggestion_just_selected = False # Ensure flag is reset
+
              st.divider()
 
              # --- Display care info if saved ---
              saved_care_info = entry.get("care_info")
+             # Update session state care_info for chat context consistency
+             if st.session_state.plant_care_info != saved_care_info:
+                 st.session_state.plant_care_info = saved_care_info
+                 st.session_state.suggestion_just_selected = False # Reset flag when loading saved details
+
+
+             # --- Display Care Instructions and Chat ---
              if saved_care_info:
                  display_care_instructions(saved_care_info)
                  st.divider()
-                 # --- Chat Interface for Saved Plant ---
-                 # Use saved care info to initialize/display chat
-                 # Check if we need to load the chat history for *this specific plant*
-                 current_chat_plant_name = saved_care_info.get("Plant Name") # Get name from care info
-                 if st.session_state.get("current_chatbot_plant_name") != current_chat_plant_name:
-                     st.session_state.chat_history = entry.get("chat_log", []) # Restore THIS log
-                     st.session_state.current_chatbot_plant_name = current_chat_plant_name
-                 # Make sure the current care info used by the chat function is the saved one
-                 st.session_state.plant_care_info = saved_care_info
-                 display_chat_interface(saved_care_info) # Display chat
-
+                 # Call chat interface with BOTH care_info and id_result
+                 display_chat_interface(current_plant_care_info=saved_care_info, plant_id_result=saved_id_result)
              else:
+                 # Handle saved profiles that only have ID (saved using "Save ID Only")
                  st.info("No specific care instructions were saved for this plant.")
+                 st.divider()
+                 # Allow generic chat based on the saved ID if available
+                 if saved_id_result:
+                     st.info("You can chat with the plant based on its saved identification.")
+                     # Call chat interface with NO care_info but WITH id_result
+                     display_chat_interface(current_plant_care_info=None, plant_id_result=saved_id_result)
+                 else:
+                     # This case should be rare if saving ID always works
+                     st.warning("No identification details found, cannot initiate chat.")
 
 
              # --- Delete Button ---
              st.divider()
-             delete_key = f"del_{nickname_to_view}".replace(" ", "_") # Ensure key is valid
-             if st.button(f"🗑️ Delete '{nickname_to_view}' Profile", key=delete_key, use_container_width=False): # Changed width
+             # Sanitize key more robustly
+             safe_nickname_del = "".join(c if c.isalnum() else "_" for c in nickname_to_view)
+             delete_key = f"del_{safe_nickname_del}"
+             if st.button(f"🗑️ Delete '{nickname_to_view}' Profile", key=delete_key, use_container_width=False):
                  del st.session_state.saved_photos[nickname_to_view]
                  st.session_state.viewing_saved_details = None
-                 # Clear potentially related state variables
-                 st.session_state.update({k: None for k in ["plant_id_result", "plant_care_info", "current_chatbot_plant_name", "suggestions", "uploaded_file_bytes", "uploaded_file_type"]})
-                 st.session_state.chat_history = []; st.session_state.saving_mode = False
+                 # Clear related state variables
+                 keys_to_reset = ["plant_id_result", "plant_care_info", "current_chatbot_plant_name",
+                                  "suggestions", "uploaded_file_bytes", "uploaded_file_type",
+                                  "chat_history", "saving_mode", "plant_id_result_for_care_check",
+                                  "suggestion_just_selected"] # Added flag reset
+                 for key in keys_to_reset:
+                     if key in st.session_state:
+                         default_val = [] if key == "chat_history" else (False if key in ["saving_mode", "suggestion_just_selected"] else None)
+                         st.session_state[key] = default_val
+
                  st.success(f"Deleted '{nickname_to_view}'.")
-                 # Resetting the selectbox value requires setting its index on rerun,
-                 # which is handled by the sidebar logic when viewing_saved_details is None.
                  st.rerun()
 
-        # If NO specific plant is selected (i.e., "-- Select --" is chosen or page just loaded):
+        # If NO specific plant is selected (overview):
         else:
+            # ... (Overview grid logic - Keep as is) ...
             st.info("Select a plant from the 'View Saved Plant' dropdown in the sidebar to see its details.")
             st.markdown("---")
             st.subheader("All Saved Plants Overview")
-            # Display Grid of Information Cards (Overview)
-            num_columns = 3 # Adjust number of columns for cards
+            # Display Grid of Information Cards
+            num_columns = 3
             cols = st.columns(num_columns)
             col_index = 0
 
@@ -1091,32 +1217,35 @@ def main():
 
                 with cols[col_index % num_columns]:
                     with st.container(border=True):
-                        # Display image within the card - use st.image for overview cards
+                        # Display image
                         if plant_data.get("image"):
-                            try:
-                                st.image(plant_data["image"], use_container_width=True)
+                            try: st.image(plant_data["image"], use_container_width=True)
                             except Exception: st.caption("Image error")
                         st.markdown(f"**{nickname}**") # Nickname
 
                         id_res = plant_data.get("id_result", {})
-                        com_name = id_res.get('common_name', 'N/A')
-                        st.caption(f"{com_name}") # Common name
+                        com_n = id_res.get('common_name', 'N/A')
+                        # Display common name only if it's not N/A or empty
+                        if com_n and com_n != 'N/A': st.caption(f"{com_n}")
 
-                        # ===========================================================
-                        # ===== START: MODIFIED VIEW DETAILS BUTTON SECTION =====
-                        # ===========================================================
                         # Button to view full details
-                        view_card_key = f"view_card_{nickname}".replace(" ", "_") # Ensure key is valid
+                        # Sanitize key more robustly
+                        safe_nickname_view = "".join(c if c.isalnum() else "_" for c in nickname)
+                        view_card_key = f"view_card_{safe_nickname_view}"
                         if st.button(f"View Full Details", key=view_card_key, use_container_width=True):
                             st.session_state.viewing_saved_details = nickname
-                            # REMOVED the direct modification of saved_view_selector state here
-                            # The selectbox index will be updated on the rerun via sidebar logic
                             st.rerun() # Rerun to show details view and update selectbox index
-                        # ===========================================================
-                        # ===== END: MODIFIED VIEW DETAILS BUTTON SECTION =====
-                        # ===========================================================
                 col_index += 1
+
 
 # --- Run the App ---
 if __name__ == "__main__":
+    # Add a check for API keys loaded from config
+    if not PLANTNET_API_KEY:
+        st.error("CRITICAL ERROR: PlantNet API Key could not be loaded. Check .env file and api_config.py.")
+        st.stop()
+    if not GEMINI_API_KEY:
+        st.warning("Warning: Gemini API Key not loaded. Chat will be disabled.")
+        # Allow app to run without Gemini for ID/Care lookup
+
     main()
